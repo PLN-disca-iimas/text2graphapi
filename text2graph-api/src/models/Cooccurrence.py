@@ -26,30 +26,6 @@ class Cooccurrence(Graph):
         self.graph_corpus, self.nodes, self.edges = [], []
 
 
-    # get nodes an its attributes and set data structure
-    def __get_entities(self, text: str) -> list:
-        pass
-
-
-    # get edges an its attributes and set data structure
-    def __get_relations(self, text: str) -> list:
-        pass
-    
-
-    # build nx-graph based of nodes and edges
-    def __build_graph(self, graph_type: str, nodes: list, edges: list) -> networkx:
-        pass
-
-
-    # graph trnsformations
-    def __graph_transform(self, graph: networkx):
-        graph_trans = GraphTransformation()
-        if self.output_format == 'adj_matrix':
-            return graph_trans.to_adjacency_matrix(graph)
-        else:
-            return graph
-
-
     # normalize text
     def __text_normalize(self, text: str) -> str:
         prep = Preprocessing()
@@ -62,10 +38,26 @@ class Cooccurrence(Graph):
         return text
 
 
+    # get nodes an its attributes
+    # structure: (node_word, {'node_attr': value})
+    def __get_entities(self, text: str) -> list:
+        pass
+
+
+    # get edges an its attributes
+    # structure: (word_i, word_j, {'edge_attr': value})
+    def __get_relations(self, text: str) -> list:
+        pass
+    
+
+    # build nx-graph based of nodes and edges
+    def __build_graph(self, graph_type: str, nodes: list, edges: list) -> networkx:
+        pass
+
     # tranform raw_text to graph based on input params
     def transform(self, corpus: list):
         """
-        This method transform input raw_text to graph presentation
+        This method transform input raw_text to graph representation
         :param corpus: list
         :return: list
         """
@@ -78,8 +70,9 @@ class Cooccurrence(Graph):
             self.edges = self.__get_relations(text)
             #4. build graph
             graph = self.__build_graph(self.graph_type, self.nodes, self.edges)
-            #5. graph_tranformation
-            trans_graph = self.__graph_transform.append(graph)
+            #5. graph_transformation
+            gr_t = GraphTransformation()
+            trans_graph = gr_t.transform(self.output_format, graph)
 
             self.graph_corpus.append(trans_graph)
 

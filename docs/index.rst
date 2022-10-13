@@ -10,6 +10,7 @@ Welcome to text2graph-api's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   Cooccurrence.rst
 
 
 Indices and tables

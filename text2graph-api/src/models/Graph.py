@@ -6,13 +6,19 @@ class Graph(object):
     def __init__(self):
         ...
 
-    def get_entities(self, text):
+    def __text_normalize(self, text: str):
+        pass
+    
+    def __get_entities(self, text):
         pass
 
-    def get_relations(self, text):
+    def __get_relations(self, text):
         pass
 
-    def build_graph(self, nodes, edges) -> networkx:
+    def __build_graph(self, nodes, edges) -> networkx:
+        pass
+
+    def transform(self, text):
         pass
 
     def plot_graph(self, graph: networkx):

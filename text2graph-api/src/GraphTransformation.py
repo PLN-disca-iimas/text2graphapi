@@ -18,3 +18,14 @@ class GraphTransformation(object):
     # transform nx-graph to pandas dataframe
     def to_pandas_adjacency(graph: networkx) -> pd:
         pass
+
+    # graph trnsformations
+    def transform(self, output_format, graph: networkx):
+        if output_format == 'adj_matrix':
+            return self.to_adjacency_matrix(graph)
+        elif output_format == 'adj_list':
+            return self.to_adjacency_list(graph)
+        elif output_format == 'adj_pandas':
+            return self.to_pandas_adjacency(graph)
+        else:
+            return graph
