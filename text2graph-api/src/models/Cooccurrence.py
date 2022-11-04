@@ -4,6 +4,7 @@ from collections import defaultdict
 import logging
 import sys
 import traceback
+import time
 
 from src.models.Graph import Graph
 from src.Preprocessing import Preprocessing
@@ -22,7 +23,7 @@ This module generate a word-coocurrence graph from raw text
 """
 
 class Cooccurrence(Graph):
-    def __init__(self, graph_type, output_format, apply_prep=True, window_size=1):
+    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1):
         """
         Co-occurrence settings, define the params to generate graph
         :param graph_type: str
@@ -38,16 +39,15 @@ class Cooccurrence(Graph):
         self.output_format = output_format
         #super().__init__(graph_type, output_format)
 
-
     # normalize text
-    def __text_normalize(self, text: str) -> str:
-        #prep = Preprocessing()
-        #if self.apply_prep == True:
-        #    text = prep.handle_blank_spaces(text)
-        #    text = prep.handle_non_ascii(text)
-        #    text = prep.handle_emoticons(text)
-        #    text = prep.handle_html_tags(text)
-        #    text = prep.to_lowercase(text)
+    def __text_normalize(self, text: str) -> list:
+        if self.apply_prep == True:
+            text = self.prep.handle_blank_spaces(text)
+            text = self.prep.handle_non_ascii(text)
+            text = self.prep.handle_emoticons(text)
+            text = self.prep.handle_html_tags(text)
+            text = self.prep.handle_stop_words(text)
+            text = self.prep.to_lowercase(text)
 
         #preproc baseline: word_tokenize
         text = self.prep.word_tokenize(text)
@@ -82,16 +82,7 @@ class Cooccurrence(Graph):
     # build nx-graph based of nodes and edges
     def __build_graph(self, nodes: list, edges: list) -> networkx:
         # pending validations
-        graph = None
-        if self.graph_type == 'MultiDiGraph':
-            graph = nx.MultiDiGraph()
-        elif self.graph_type == 'MultiGraph':
-            graph = nx.MultiGraph()
-        elif self.graph_type == 'DiGraph':
-            graph = nx.DiGraph()
-        else:
-            graph = nx.Graph()
-
+        graph = super().set_graph_type(self.graph_type)
         graph.add_nodes_from(nodes)
         graph.add_edges_from(edges)
         return graph
@@ -107,24 +98,41 @@ class Cooccurrence(Graph):
         logger.info("Inint text to graph tranformation")
         corpus_output_graph = []
         doc_id = 1
-        for text in corpus_input_text:
-            output_dict = {'doc_id': doc_id, 'doc_graph': '', 'status': 'success'}
+        avg_time = 0
+        number_of_edges = 0
+        number_of_nodes = 0
+        for instance in corpus_input_text:
+            logger.debug('--- Processing doc ', str(doc_id))
+            time_init = time.time() # time init
+            output_dict = {'doc_id': instance['id'], 'doc_graph': '', 'status': 'success'}
+            print(instance)
             try:
                 #1. text preprocessing
-                prep_text = self.__text_normalize(text)
+                prep_text = self.__text_normalize(instance['doc'])
                 #2. get entities
                 nodes = self.__get_entities(prep_text)
                 #3. get relations
                 edges = self.__get_relations(prep_text)
                 #4. build graph
                 graph = self.__build_graph(nodes, edges)
+                number_of_edges += graph.number_of_edges()
+                number_of_nodes += graph.number_of_nodes()
                 #5. graph_transformation
-                output_dict['doc'] = nx.adjacency_matrix(graph)
+                output_dict['doc_graph'] = self.graph_trans.transform(self.output_format, graph)
             except Exception as e:
                 logger.error('Error: %s', str(e))
                 output_dict['status'] = 'fail'
             finally:
                 corpus_output_graph.append(output_dict)
                 doc_id += 1
+
+            time_end = time.time() - time_init # time end
+            avg_time += time_end
+            logger.debug("time: %s sec", str(time_end))
+            
+        logger.debug('Avg. time: %s', str(avg_time/doc_id))
+        logger.debug('Avg. nodes: %s', str(number_of_nodes//doc_id))
+        logger.debug('Avg. edges: %s', str(number_of_edges//doc_id))
+
         return corpus_output_graph
 

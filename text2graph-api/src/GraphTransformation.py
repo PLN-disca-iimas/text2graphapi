@@ -8,20 +8,19 @@ class GraphTransformation():
         pass
 
     # transform nx-graph to adj matrix
-    def to_adjacency_matrix(graph: networkx, sparse=True) -> np:
+    def to_adjacency_matrix(self, graph: networkx) -> np:
         return nx.adjacency_matrix(graph)
     
     # transform nx-graph to adj matrix
-    def to_adjacency_list(graph: networkx) -> list:
+    def to_adjacency_list(self, graph: networkx) -> list:
         return nx.generate_adjlist(graph)
     
     # transform nx-graph to pandas dataframe
-    def to_pandas_adjacency(graph: networkx) -> pd:
+    def to_pandas_adjacency(self, graph: networkx) -> pd:
         return nx.to_pandas_adjacency(graph)
 
     # graph trnsformations
     def transform(self, output_format: str, graph: networkx):
-        print(output_format, graph)
         if output_format == 'adj_matrix':
             return self.to_adjacency_matrix(graph)
         elif output_format == 'adj_list':

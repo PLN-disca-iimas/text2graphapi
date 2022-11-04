@@ -12,15 +12,17 @@ class Graph():
         self.output_format = output_format
         self.graph = self.__set_graph_type(graph_type)
 
-    def __set_graph_type(self, graph_type: str) -> networkx:
+    def set_graph_type(self, graph_type: str) -> networkx:
+        graph = None
         if graph_type == 'MultiDiGraph':
-            self.G = nx.MultiDiGraph()
+            graph = nx.MultiDiGraph()
         elif graph_type == 'MultiGraph':
-            self.G = nx.MultiGraph()
+            graph = nx.MultiGraph()
         elif graph_type == 'DiGraph':
-            self.G = nx.DiGraph()
+            graph = nx.DiGraph()
         else:
-            self.G = nx.Graph()
+            graph = nx.Graph()
+        return graph
 
     def plot_graph(self, graph: networkx):
         pass

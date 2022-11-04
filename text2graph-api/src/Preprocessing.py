@@ -6,10 +6,14 @@ import codecs
 import contractions
 from emot.emo_unicode import UNICODE_EMOJI, UNICODE_EMOJI_ALIAS, EMOTICONS_EMO
 from flashtext import KeywordProcessor  
+import os
 
-
+#root_prep = os.path.dirname(os.path.dirname(__file__))
+root_prep = 'C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/text2graph-api/src'
+print('root_prep: ', root_prep)
+stoword_path = root_prep + '/stopwords_english.txt'
 stopwords = []
-for line in codecs.open('stopwords_english.txt', encoding = "utf-8"):
+for line in codecs.open(stoword_path, encoding = "utf-8"):
     # Remove black space if they exist
     stopwords.append(line.strip())
 stopwords = dict.fromkeys(stopwords, True)   
@@ -94,7 +98,7 @@ class Preprocessing(object):
             str: Text without stopwords.        
         """
         tokens = self.word_tokenize(text)
-        # Remove las stopwords
+        #Remove las stopwords
         without_stopwords = [word for word in tokens if not stopwords.get(word.lower().strip(), False)]
         return " ".join(without_stopwords)
     
