@@ -1,7 +1,5 @@
-re  
 emoji
 nltk
-string
 codecs
 contractions
 emot

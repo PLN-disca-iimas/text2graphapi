@@ -5,7 +5,9 @@ import logging
 import sys
 import traceback
 import time
+from joblib import Parallel, delayed
 
+from src.Utils import Utils
 from src.models.Graph import Graph
 from src.Preprocessing import Preprocessing
 from src.GraphTransformation import GraphTransformation
@@ -23,17 +25,20 @@ This module generate a word-coocurrence graph from raw text
 """
 
 class Cooccurrence(Graph):
-    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1):
+    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1, parallel_exec=True):
         """
         Co-occurrence settings, define the params to generate graph
         :param graph_type: str
         :param output_format: str
         :param apply_prep: bool
         :param window_size: int
+        :param parallel_exec: bool
         """
         self.apply_prep = apply_prep
+        self.parallel_exec = parallel_exec
         self.window_size = window_size
         self.prep = Preprocessing()
+        self.utils = Utils()
         self.graph_trans = GraphTransformation()
         self.graph_type = graph_type
         self.output_format = output_format
@@ -88,51 +93,55 @@ class Cooccurrence(Graph):
         return graph
 
 
+    def transform_pipeline(self, text_instance: list) -> list:
+        output_dict = {
+            'doc_id': text_instance['id'], 
+            'graph': None, 
+            'number_of_edges': 0, 
+            'number_of_nodes': 0, 
+            'status': 'success'
+        }
+        try:
+            #1. text preprocessing
+            prep_text = self.__text_normalize(text_instance['doc'])
+            #2. get entities
+            nodes = self.__get_entities(prep_text)
+            #3. get relations
+            edges = self.__get_relations(prep_text)
+            #4. build graph
+            graph = self.__build_graph(nodes, edges)
+            output_dict['number_of_edges'] += graph.number_of_edges()
+            output_dict['number_of_nodes'] += graph.number_of_nodes()
+            #5. graph_transformation
+            output_dict['graph'] = self.graph_trans.transform(self.output_format, graph)
+        except Exception as e:
+            logger.error('Error: %s', str(e))
+            output_dict['status'] = 'fail'
+        finally:
+            return output_dict
+        
+
     # tranform raw_text to graph based on input params
-    def transform(self, corpus_input_text: list) -> list:
+    def transform(self, corpus_input_text) -> list:
         """
         This method transform input raw_text to graph representation
-        :param corpus: list
+        :param corpus_input_text: list
         :return: list
         """
-        logger.info("Inint text to graph tranformation")
-        corpus_output_graph = []
-        doc_id = 1
-        avg_time = 0
-        number_of_edges = 0
-        number_of_nodes = 0
-        for instance in corpus_input_text:
-            logger.debug('--- Processing doc ', str(doc_id))
-            time_init = time.time() # time init
-            output_dict = {'doc_id': instance['id'], 'doc_graph': '', 'status': 'success'}
-            print(instance)
-            try:
-                #1. text preprocessing
-                prep_text = self.__text_normalize(instance['doc'])
-                #2. get entities
-                nodes = self.__get_entities(prep_text)
-                #3. get relations
-                edges = self.__get_relations(prep_text)
-                #4. build graph
-                graph = self.__build_graph(nodes, edges)
-                number_of_edges += graph.number_of_edges()
-                number_of_nodes += graph.number_of_nodes()
-                #5. graph_transformation
-                output_dict['doc_graph'] = self.graph_trans.transform(self.output_format, graph)
-            except Exception as e:
-                logger.error('Error: %s', str(e))
-                output_dict['status'] = 'fail'
-            finally:
-                corpus_output_graph.append(output_dict)
-                doc_id += 1
+        logger.info("Inint text to graph transformation")
+        corpus_output_graph, delayed_func = [], []
 
-            time_end = time.time() - time_init # time end
-            avg_time += time_end
-            logger.debug("time: %s sec", str(time_end))
-            
-        logger.debug('Avg. time: %s', str(avg_time/doc_id))
-        logger.debug('Avg. nodes: %s', str(number_of_nodes//doc_id))
-        logger.debug('Avg. edges: %s', str(number_of_edges//doc_id))
+        for input_text in corpus_input_text:
+            logger.debug('--- Processing doc ', input_text['id']) 
+            if self.parallel_exec == True: 
+                delayed_func.append(
+                    self.utils.joblib_delayed(funct=self.transform_pipeline, params=input_text) 
+                )
+            else:
+                corpus_output_graph.append(self.transform_pipeline(input_text))
 
+        if self.parallel_exec == True: 
+            corpus_output_graph = Parallel(n_jobs=-1)(delayed_func)
+        
         return corpus_output_graph
 
