@@ -1,3 +1,5 @@
+import os
+import stanza
 import re  
 import emoji
 import nltk
@@ -6,22 +8,30 @@ import codecs
 import contractions
 from emot.emo_unicode import UNICODE_EMOJI, UNICODE_EMOJI_ALIAS, EMOTICONS_EMO
 from flashtext import KeywordProcessor  
-import os
+
+stanza.download('es') # download Spanish model
+stanza.download('en') # download English model
+
 
 #root_prep = os.path.dirname(os.path.dirname(__file__))
+# root_prep = 'C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/text2graph-api/src'
+# print('root_prep: ', root_prep)
+
+if not os.path.exists('stopwords_english.txt'):
+  !wget -qO- -O stopwords_english.txt \
+         https://raw.githubusercontent.com/pan-webis-de/authorid/master/data/stopwords_english.txt
+
+
+if not os.path.exists('spanish.txt'):
+  !wget -qO- -O stopwords_spanish.txt \
+         https://raw.githubusercontent.com/Alir3z4/stop-words/master/spanish.txt
+
+# root_prep = '/content'
 root_prep = 'C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/text2graph-api/src'
-print('root_prep: ', root_prep)
-stoword_path = root_prep + '/stopwords_english.txt'
-stopwords = []
-for line in codecs.open(stoword_path, encoding = "utf-8"):
-    # Remove black space if they exist
-    stopwords.append(line.strip())
-stopwords = dict.fromkeys(stopwords, True)   
 
 
 class Preprocessing(object):
     """Text parser for the preprocessing.
-
     Params:
         pos_tagger: Tagger for part of speech.    
     
@@ -33,8 +43,24 @@ class Preprocessing(object):
          another one astonished. It seems ok hand
     """
 
-    def __init__(self, pos_tagger=nltk.pos_tag):
-        self.pos_tagger = pos_tagger
+    def __init__(self, lang='en'):
+        # , pos_tagger=nltk.pos_tag
+        # self.pos_tagger = pos_tagger
+        self.lang = lang
+        stopwords = []
+        # Guardamos las stopwords correspondientes
+        if self.lang == 'en':
+          stoword_path = root_prep + '/stopwords_english.txt'
+          self.nlp = stanza.Pipeline('en')
+        elif self.lang == 'es':
+          stoword_path = root_prep + '/stopwords_spanish.txt'
+          self.nlp = stanza.Pipeline('es')
+        
+        for line in codecs.open(stoword_path, encoding = "utf-8"):
+            # Remove black space if they exist
+            stopwords.append(line.strip())
+        self.stopwords = dict.fromkeys(stopwords, True)   
+
 
     def handle_blank_spaces(self, text: str) -> str:
         """Remove blank spaces.
@@ -99,7 +125,7 @@ class Preprocessing(object):
         """
         tokens = self.word_tokenize(text)
         #Remove las stopwords
-        without_stopwords = [word for word in tokens if not stopwords.get(word.lower().strip(), False)]
+        without_stopwords = [word for word in tokens if not self.stopwords.get(word.lower().strip(), False)]
         return " ".join(without_stopwords)
     
     def handle_contractions(self, text: str) -> str:
@@ -115,7 +141,6 @@ class Preprocessing(object):
         
     def handle_negations(self, text: str) -> str:
         """Handle negations.        
-
         Params:
             text (str): Text for preprocesesing.
         Return:
@@ -153,7 +178,7 @@ class Preprocessing(object):
         """
         return nltk.word_tokenize(text)
 
-    def pos_tagger(self, text: list) -> list:
+    def pos_tagger(self, text: str) -> list:
         """Tagging part of speech.
         
         Params:
@@ -161,4 +186,5 @@ class Preprocessing(object):
         Return:
             str: Text tagged.         
         """
-        return self.pos_tagger(text)
+        doc = self.nlp(text)
+        return [(word.text, word.pos) for sentence in doc.sentences for word in sentence.words]
