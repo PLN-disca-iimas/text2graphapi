@@ -8,70 +8,71 @@ import time
     Main file to run testing for Library
 '''
 
-#corpus_input_texts = ["I go to school every day by bus.", 
-#                      "i go to theatre every night by bus"]
+ROOT_PATH = os.path.dirname(os.path.dirname(__file__))
 
 
-root_path = os.path.dirname(os.path.dirname(__file__))
-dataset = 'pan20'
-dataset_path = root_path + '/text2graph-api/datasets/' + dataset
-train_data = dataset_path + '/train_small.jsonl' #train_small
-#test_data = dataset_path + '/test.jsonl'
-
-docs = []
-for line in open(train_data, encoding='utf8'):
-    docs.append(json.loads(line))
-#for line in open(test_data, encoding='utf8'):
-#    docs.append(json.loads(line))
+def read_dataset(dataset, file):
+    docs = []
+    dataset_path = ROOT_PATH + '/text2graph-api/datasets/' + dataset
+    data = dataset_path + '/' + file
+    for line in open(data, encoding='utf8'):
+        docs.append(json.loads(line))
+    return docs
 
 
-num_problems = len(docs)
-print('Num_Docs: ', num_problems)
-
-corpus_docs = []
-for line in docs[:10]:
-    doc = {
-        "id": line['id'] + '_1', "doc": line['pair'][0],
-        "id": line['id'] + '_2', "doc": line['pair'][1]
-    }
-    corpus_docs.append(doc)
-
-occur = Cooccurrence(
-        graph_type='DiGraph', 
-        apply_prep=True, 
-        parallel_exec=True,
-        window_size=1, 
-        #language = 'ESP',
-        #output_format='adj_matrix'
-    )
-
-start_time = time.time() # time init
-# expected input format: {"id": "doc_id", "doc": "text_data" ...}
-corpus_output_texts = occur.transform(corpus_docs)
-end_time = (time.time() - start_time)
-print('--------------------------')
-print('Dataset: ', dataset)
-print('Num_Problems: ', num_problems)
-print('Num_Docs: ', len(corpus_docs))
-print("TOTAL TIME:  %s seconds" % end_time)
-
-#print('corpus_texts: ', corpus_docs)
-#print('corpus_graphs:')
-for g in corpus_output_texts[:1]:
-    print(g)
+def handle_PAN_dataset(corpus_docs):
+    new_corpus_docs = []
+    for line in corpus_docs[:]:
+        docs = [
+            {"id": line['id'] + '_1', "doc": line['pair'][0]},
+            {"id": line['id'] + '_2', "doc": line['pair'][1]}
+        ]
+        new_corpus_docs.extend(docs)
+    return new_corpus_docs
 
 
-'''
-corpus_output_texts = [
-    {"doc_id": 1, "doc_text": ""}, 
-    {"doc_id": 2, "doc_text": ""}, 
-]
-'''
+def text_to_cooccur_graph(corpus_docs):
+    # create co_occur object
+    co_occur = Cooccurrence(
+            graph_type = 'DiGraph', 
+            apply_prep = True, 
+            parallel_exec = True,
+            window_size = 1, 
+            #language = 'es', #es, en
+            output_format = 'adj_matrix'
+        )
+    # apply co_occur trnaformation
+    corpus_cooccur_graphs = co_occur.transform(corpus_docs)
+    return corpus_cooccur_graphs
 
 
-'''
-corpus_output_texts = [
-    {"doc_id": 1, "doc_graph": "adj_matrix", 'status': 'success'}, 
-    {"doc_id": 2, "doc_graph": "adj_matrix", 'status': 'success'}, 
-]
-'''
+def main():
+    # read dataset
+    dataset = 'pan15'
+    corpus = read_dataset(dataset, file='train.jsonl')
+    corpus.extend(read_dataset(dataset, file='test.jsonl'))
+
+    # handle PAN datsets: format normalization
+    corpus_text_docs = handle_PAN_dataset(corpus)
+    
+    start_time = time.time() # time init
+    # expected input  ex: [{"id": 1, "doc": "text_data"}, ...]
+    # expected output ex: [{"id": 1, "doc_graph": "adj_matrix", 'number_of_edges': 123, 'number_of_nodes': 321 'status': 'success'}, ...]
+    corpus_graph_docs = text_to_cooccur_graph(corpus_text_docs) 
+    end_time = (time.time() - start_time)
+   
+    # metrics
+    print('--------------------------')
+    print('Dataset: ', dataset)
+    print('Num_Problems: ', len(corpus))
+    print('Num_Text_Docs: ', len(corpus_text_docs))
+    print('Num_Graph_Docs: ', len(corpus_graph_docs))
+    print("TOTAL TIME:  %s seconds" % end_time)
+
+    # show 5 first corpus_graph_docs
+    for graph in corpus_graph_docs[:5]:
+        print(graph)
+
+
+if __name__ == '__main__':
+    main()

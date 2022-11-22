@@ -44,6 +44,7 @@ class Cooccurrence(Graph):
         self.output_format = output_format
         #super().__init__(graph_type, output_format)
 
+
     # normalize text
     def __text_normalize(self, text: str) -> list:
         if self.apply_prep == True:
@@ -67,6 +68,7 @@ class Cooccurrence(Graph):
             node = (n[0], {'pos_tag': n[1]}) # (word, {'node_attr': value})
             nodes.append(node) 
         return nodes
+
 
     # get edges an its attributes
     def __get_relations(self, word_tokens: list) -> list:
