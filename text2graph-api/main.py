@@ -8,12 +8,12 @@ import time
     Main file to run testing for Library
 '''
 
-ROOT_PATH = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def read_dataset(dataset, file):
     docs = []
-    dataset_path = ROOT_PATH + '/text2graph-api/datasets/' + dataset
+    dataset_path = ROOT_DIR + '/text2graph-api/datasets/' + dataset
     data = dataset_path + '/' + file
     for line in open(data, encoding='utf8'):
         docs.append(json.loads(line))
@@ -22,7 +22,7 @@ def read_dataset(dataset, file):
 
 def handle_PAN_dataset(corpus_docs):
     new_corpus_docs = []
-    for line in corpus_docs[:]:
+    for line in corpus_docs[:10]:
         docs = [
             {"id": line['id'] + '_1', "doc": line['pair'][0]},
             {"id": line['id'] + '_2', "doc": line['pair'][1]}
@@ -36,9 +36,9 @@ def text_to_cooccur_graph(corpus_docs):
     co_occur = Cooccurrence(
             graph_type = 'DiGraph', 
             apply_prep = True, 
-            parallel_exec = True,
+            parallel_exec = False,
             window_size = 1, 
-            #language = 'es', #es, en
+            language = 'en', #es, en
             output_format = 'adj_matrix'
         )
     # apply co_occur trnaformation

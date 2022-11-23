@@ -12,22 +12,18 @@ from flashtext import KeywordProcessor
 stanza.download('es') # download Spanish model
 stanza.download('en') # download English model
 
-
-#root_prep = os.path.dirname(os.path.dirname(__file__))
-# root_prep = 'C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/text2graph-api/src'
-# print('root_prep: ', root_prep)
+ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 
 if not os.path.exists('stopwords_english.txt'):
-  !wget -qO- -O stopwords_english.txt \
-         https://raw.githubusercontent.com/pan-webis-de/authorid/master/data/stopwords_english.txt
-
+    pass
+    '''!wget -qO- -O stopwords_english.txt \
+         https://raw.githubusercontent.com/pan-webis-de/authorid/master/data/stopwords_english.txt'''
 
 if not os.path.exists('spanish.txt'):
-  !wget -qO- -O stopwords_spanish.txt \
-         https://raw.githubusercontent.com/Alir3z4/stop-words/master/spanish.txt
-
-# root_prep = '/content'
-root_prep = 'C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/text2graph-api/src'
+    pass
+    '''!wget -qO- -O stopwords_spanish.txt \
+         https://raw.githubusercontent.com/Alir3z4/stop-words/master/spanish.txt'''
 
 
 class Preprocessing(object):
@@ -50,10 +46,10 @@ class Preprocessing(object):
         stopwords = []
         # Guardamos las stopwords correspondientes
         if self.lang == 'en':
-          stoword_path = root_prep + '/stopwords_english.txt'
+          stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
           self.nlp = stanza.Pipeline('en')
         elif self.lang == 'es':
-          stoword_path = root_prep + '/stopwords_spanish.txt'
+          stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'
           self.nlp = stanza.Pipeline('es')
         
         for line in codecs.open(stoword_path, encoding = "utf-8"):
@@ -71,6 +67,7 @@ class Preprocessing(object):
             str: Text without blank space.
         """    
         return re.sub(r'\s+', ' ', text).strip()
+
 
     def handle_non_ascii(self, text: str) -> str:
         """Remove special characters.
@@ -104,6 +101,7 @@ class Preprocessing(object):
 
         return kp_all_emoji_emoticons.replace_keywords(text)
         
+
     def handle_html_tags(self, text: str) -> str:
         """Remove any html tags.
         
@@ -128,6 +126,7 @@ class Preprocessing(object):
         without_stopwords = [word for word in tokens if not self.stopwords.get(word.lower().strip(), False)]
         return " ".join(without_stopwords)
     
+
     def handle_contractions(self, text: str) -> str:
         """Expand contractions.
         
@@ -139,6 +138,7 @@ class Preprocessing(object):
         expanded_words = [contractions.fix(word) for word in text.split(" ")]
         return " ".join(expanded_words)  
         
+
     def handle_negations(self, text: str) -> str:
         """Handle negations.        
         Params:
@@ -177,6 +177,7 @@ class Preprocessing(object):
             str: Text tokenize by word.  
         """
         return nltk.word_tokenize(text)
+
 
     def pos_tagger(self, text: str) -> list:
         """Tagging part of speech.

@@ -25,7 +25,7 @@ This module generate a word-coocurrence graph from raw text
 """
 
 class Cooccurrence(Graph):
-    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1, parallel_exec=True):
+    def __init__(self, graph_type, language='en', output_format='', apply_prep=True, window_size=1, parallel_exec=True):
         """
         Co-occurrence settings, define the params to generate graph
         :param graph_type: str
@@ -37,7 +37,7 @@ class Cooccurrence(Graph):
         self.apply_prep = apply_prep
         self.parallel_exec = parallel_exec
         self.window_size = window_size
-        self.prep = Preprocessing()
+        self.prep = Preprocessing(lang=language)
         self.utils = Utils()
         self.graph_trans = GraphTransformation()
         self.graph_type = graph_type
