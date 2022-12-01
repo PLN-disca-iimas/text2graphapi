@@ -8,9 +8,14 @@ import codecs
 import contractions
 from emot.emo_unicode import UNICODE_EMOJI, UNICODE_EMOJI_ALIAS, EMOTICONS_EMO
 from flashtext import KeywordProcessor  
+import spacy
 
-stanza.download('es') # download Spanish model
-stanza.download('en') # download English model
+#stanza.download('es') # download Spanish model
+#stanza.download('en') # download English model
+
+#!pip install -U spacy
+#!python -m spacy download en_core_web_sm # download English model
+#!python -m spacy download es_core_news_md # download Spanish model
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
@@ -46,11 +51,13 @@ class Preprocessing(object):
         stopwords = []
         # Guardamos las stopwords correspondientes
         if self.lang == 'en':
-          stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
-          self.nlp = stanza.Pipeline('en')
+          stoword_path = RESOURCES_DIR + '/stopwords_english.txt'          
+          # Load English tokenizer, tagger, parser and NER
+          self.nlp = spacy.load("en_core_web_sm")
         elif self.lang == 'es':
           stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'
-          self.nlp = stanza.Pipeline('es')
+          # Load Spanish tokenizer, tagger, parser and NER
+          self.nlp = spacy.load('es_core_news_md')
         
         for line in codecs.open(stoword_path, encoding = "utf-8"):
             # Remove black space if they exist
@@ -188,4 +195,4 @@ class Preprocessing(object):
             str: Text tagged.         
         """
         doc = self.nlp(text)
-        return [(word.text, word.pos) for sentence in doc.sentences for word in sentence.words]
+        return [(token, token.pos_) for token in doc]
