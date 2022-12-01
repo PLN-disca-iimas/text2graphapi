@@ -8,9 +8,9 @@ import time
 from joblib import Parallel, delayed
 
 from src.Utils import Utils
-from src.models.Graph import Graph
 from src.Preprocessing import Preprocessing
 from src.GraphTransformation import GraphTransformation
+from src import Graph
 
 # Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
@@ -18,21 +18,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-"""
-Cooccurence
-------------
-This module generate a word-coocurrence graph from raw text 
-"""
-
-class Cooccurrence(Graph):
+class Cooccurrence(Graph.Graph):
+    """This module generate a word-coocurrence graph from raw text 
+        
+        :param str graph_type: graph type to generate
+        :param str output_format: output format to the graph
+        :param int window_size: windows size for co-occurrence 
+        :param bool apply_prep: flag to exec text prepocessing
+        :param bool parallel_exec: flag to exec tranformation in parallel
+    """
     def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1, parallel_exec=True):
-        """
-        Co-occurrence settings, define the params to generate graph
-        :param graph_type: str
-        :param output_format: str
-        :param apply_prep: bool
-        :param window_size: int
-        :param parallel_exec: bool
+        """Constructor method
         """
         self.apply_prep = apply_prep
         self.parallel_exec = parallel_exec
@@ -95,7 +91,7 @@ class Cooccurrence(Graph):
         return graph
 
 
-    def transform_pipeline(self, text_instance: list) -> list:
+    def __transform_pipeline(self, text_instance: list) -> list:
         output_dict = {
             'doc_id': text_instance['id'], 
             'graph': None, 
@@ -137,10 +133,10 @@ class Cooccurrence(Graph):
             logger.debug('--- Processing doc ', input_text['id']) 
             if self.parallel_exec == True: 
                 delayed_func.append(
-                    self.utils.joblib_delayed(funct=self.transform_pipeline, params=input_text) 
+                    self.utils.joblib_delayed(funct=self.__transform_pipeline, params=input_text) 
                 )
             else:
-                corpus_output_graph.append(self.transform_pipeline(input_text))
+                corpus_output_graph.append(self.__transform_pipeline(input_text))
 
         if self.parallel_exec == True: 
             corpus_output_graph = Parallel(n_jobs=-1)(delayed_func)

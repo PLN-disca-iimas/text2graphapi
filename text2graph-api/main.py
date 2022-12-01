@@ -1,4 +1,4 @@
-from src.models.Cooccurrence import Cooccurrence
+from src.Cooccurrence import Cooccurrence
 import os
 import json
 import time
@@ -20,9 +20,9 @@ def read_dataset(dataset, file):
     return docs
 
 
-def handle_PAN_dataset(corpus_docs):
+def handle_PAN_dataset(corpus_docs, num_rows=-1):
     new_corpus_docs = []
-    for line in corpus_docs[:]:
+    for line in corpus_docs[:num_rows]:
         docs = [
             {"id": line['id'] + '_1', "doc": line['pair'][0]},
             {"id": line['id'] + '_2', "doc": line['pair'][1]}
@@ -36,7 +36,7 @@ def text_to_cooccur_graph(corpus_docs):
     co_occur = Cooccurrence(
             graph_type = 'DiGraph', 
             apply_prep = True, 
-            parallel_exec = True,
+            parallel_exec = False,
             window_size = 1, 
             #language = 'es', #es, en
             output_format = 'adj_matrix'
@@ -48,7 +48,7 @@ def text_to_cooccur_graph(corpus_docs):
 
 def main():
     # read dataset
-    dataset = 'pan15'
+    dataset = 'pan14'
     corpus = read_dataset(dataset, file='train.jsonl')
     corpus.extend(read_dataset(dataset, file='test.jsonl'))
 

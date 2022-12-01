@@ -1,8 +1,7 @@
-models
-======
+src
+===
 
 .. toctree::
    :maxdepth: 4
 
-   Cooccurrence
-   Graph
+   src

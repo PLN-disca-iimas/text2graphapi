@@ -7,10 +7,10 @@ Welcome to text2graph-api's documentation!
 ==========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 2 
    :caption: Contents:
 
-   Cooccurrence.rst
+   modules.rst
 
 
 Indices and tables

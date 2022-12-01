@@ -4,3 +4,7 @@ codecs
 contractions
 emot
 flashtext
+networkx
+joblib
+matplotlib
+pandas

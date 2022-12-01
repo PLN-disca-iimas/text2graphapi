@@ -2,15 +2,18 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import networkx
 
-class Graph():
+
+class Graph(object): 
+    """
+    Graph general settings
+    :param graph_type: str
+    :param output_format: str
+    """
     def __init__(self, graph_type='Graph', output_format= 'adj_matrix'):
-        """
-        Graph general settings
-        :param graph_type: str
-        :param output_format: str
+        """Constructor method
         """
         self.output_format = output_format
-        self.graph = self.__set_graph_type(graph_type)
+        self.graph = self.set_graph_type(graph_type)
 
     def set_graph_type(self, graph_type: str) -> networkx:
         graph = None
@@ -24,5 +27,12 @@ class Graph():
             graph = nx.Graph()
         return graph
 
-    def plot_graph(self, graph: networkx):
+    def plot_graph(self, graph):
+        """This method allow to plot a networkx graph
+            
+            :param networkx graph: graph to plot
+            :returns: graph
+            
+            :rtype: none
+        """
         pass

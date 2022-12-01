@@ -4,17 +4,27 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
-import os
+import os 
 import sys
 
-#sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
-current_dir = os.path.dirname(__file__)
-target_dir = os.path.abspath(os.path.join(current_dir, "../src/models/"))
-#sys.path.insert(0, target_dir)
-sys.path.append("C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/src/")
 
+current_dir = os.path.dirname(__file__)
+target_dir = os.path.abspath(os.path.join(current_dir, "../text2graph-api"))
+sys.path.insert(0, target_dir)
 print('current_dir: ', current_dir)
 print('target_dir: ', target_dir)
+
+#sys.path.insert(0, os.path.abspath('../text2graph-api/src'))
+#print('target_dir: ', os.path.abspath('../text2graph-api/src'))
+
+
+#current_dir = os.path.dirname(__file__)
+#target_dir = os.path.abspath(os.path.join(current_dir, "../src/models/"))
+#sys.path.insert(0, target_dir)
+#sys.path.append("C:/Users/Qualtop/Desktop/andric/Projects/text2graph-API/src/")
+
+#print('current_dir: ', current_dir)
+#print('target_dir: ', target_dir)
 
 
 # -- Project information -----------------------------------------------------
