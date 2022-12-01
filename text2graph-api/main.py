@@ -8,12 +8,12 @@ import time
     Main file to run testing for Library
 '''
 
-ROOT_PATH = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def read_dataset(dataset, file):
     docs = []
-    dataset_path = ROOT_PATH + '/text2graph-api/datasets/' + dataset
+    dataset_path = ROOT_DIR + '/text2graph-api/datasets/' + dataset
     data = dataset_path + '/' + file
     for line in open(data, encoding='utf8'):
         docs.append(json.loads(line))
@@ -38,7 +38,7 @@ def text_to_cooccur_graph(corpus_docs):
             apply_prep = True, 
             parallel_exec = False,
             window_size = 1, 
-            #language = 'es', #es, en
+            language = 'en', #es, en
             output_format = 'adj_matrix'
         )
     # apply co_occur trnaformation

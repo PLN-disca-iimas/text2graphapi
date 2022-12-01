@@ -33,7 +33,7 @@ class Cooccurrence(Graph.Graph):
         self.apply_prep = apply_prep
         self.parallel_exec = parallel_exec
         self.window_size = window_size
-        self.prep = Preprocessing()
+        self.prep = Preprocessing(lang=language)
         self.utils = Utils()
         self.graph_trans = GraphTransformation()
         self.graph_type = graph_type
