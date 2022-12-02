@@ -53,7 +53,7 @@ def main():
     corpus.extend(read_dataset(dataset, file='test.jsonl'))
 
     # handle PAN datsets: format normalization
-    corpus_text_docs = handle_PAN_dataset(corpus)
+    corpus_text_docs = handle_PAN_dataset(corpus, num_rows=10)
     
     start_time = time.time() # time init
     # expected input  ex: [{"id": 1, "doc": "text_data"}, ...]

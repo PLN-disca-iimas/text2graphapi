@@ -24,10 +24,11 @@ class Cooccurrence(Graph.Graph):
         :param str graph_type: graph type to generate
         :param str output_format: output format to the graph
         :param int window_size: windows size for co-occurrence 
+        :param int language: language for text prepocessing
         :param bool apply_prep: flag to exec text prepocessing
         :param bool parallel_exec: flag to exec tranformation in parallel
     """
-    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1, parallel_exec=True):
+    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1, parallel_exec=True, language='en'):
         """Constructor method
         """
         self.apply_prep = apply_prep
@@ -52,7 +53,7 @@ class Cooccurrence(Graph.Graph):
             text = self.prep.to_lowercase(text)
 
         #preproc baseline: word_tokenize
-        text = self.prep.word_tokenize(text)
+        #text = self.prep.word_tokenize(text)
         return text
 
 
@@ -102,9 +103,9 @@ class Cooccurrence(Graph.Graph):
         try:
             #1. text preprocessing
             prep_text = self.__text_normalize(text_instance['doc'])
-            #2. get entities
+            #2. get_entities
             nodes = self.__get_entities(prep_text)
-            #3. get relations
+            #3. get_relations
             edges = self.__get_relations(prep_text)
             #4. build graph
             graph = self.__build_graph(nodes, edges)

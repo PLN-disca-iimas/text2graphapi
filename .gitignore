@@ -3,3 +3,6 @@ docs/_build/
 docs/sources/_templates
 __pycache__/
 text2graph-api/datasets/pan20/
+build/
+dist/
+text2graph_api.egg-info/

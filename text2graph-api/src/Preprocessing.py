@@ -1,5 +1,4 @@
 import os
-import stanza
 import re  
 import emoji
 import nltk

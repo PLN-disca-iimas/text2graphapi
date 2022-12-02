@@ -9,7 +9,7 @@ with open(path.join(ROOT, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="text2graph-api",
-    version="0.1.0",
+    version="0.0.1",
     description="Use this library to transform raw text into differents graph representations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -26,15 +26,18 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'sklearn',
-        'unidecode',
-        'nltk',
-        'gensim',
+        'contractions',
+        'emoji',
+        'emot',
+        'flashtext',
+        'joblib',
         'matplotlib',
         'networkx',
-        'pandas',
+        'nltk',
         'numpy',
-        'emoji',
+        'pandas',
+        'setuptools',
+        'spacy',
         'sphinx'
     ]
 )
