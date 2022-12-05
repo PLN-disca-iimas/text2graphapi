@@ -32,10 +32,9 @@ if not os.path.exists('spanish.txt'):
 
 class Preprocessing(object):
     """Text parser for the preprocessing.
-    Params:
-        pos_tagger: Tagger for part of speech.    
+    :params pos_tagger: Tagger for part of speech.    
     
-    Examples:
+    :examples
         >>> text = "I am an 🤖 hehe :-)). Lets try :D another one 😲. It seems 👌"
         >>> pre = Preprocessing()
         >>> pre.handle_emoticons(text)
@@ -67,10 +66,8 @@ class Preprocessing(object):
     def handle_blank_spaces(self, text: str) -> str:
         """Remove blank spaces.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text without blank space.
+        :param str text : Text for preprocesesing.
+        :return str: Text without blank space.
         """    
         return re.sub(r'\s+', ' ', text).strip()
 
@@ -78,10 +75,8 @@ class Preprocessing(object):
     def handle_non_ascii(self, text: str) -> str:
         """Remove special characters.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text without non_asccii characters.        
+        :params str text: Text for preprocesesing.
+        :return str: Text without non_asccii characters.        
         """
         regex_non_asccii = f'[^{string.ascii_letters}]'
         return re.sub(regex_non_asccii, " ", text)
@@ -90,10 +85,8 @@ class Preprocessing(object):
     def handle_emoticons(self, text: str) -> str:
         """Transform emoji to text.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text with emoji text.
+        :params str text: Text for preprocesesing.
+        :return str: Text with emoji text.
         """
         ## Join and clen emojis and emoticons
         all_emoji_emoticons = {**EMOTICONS_EMO,**UNICODE_EMOJI_ALIAS}
@@ -111,10 +104,8 @@ class Preprocessing(object):
     def handle_html_tags(self, text: str) -> str:
         """Remove any html tags.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text without tags.
+        :params str text: Text for preprocesesing.
+        :return str: Text without tags.
         """
         html_pattern = re.compile('<.*?>')
         return html_pattern.sub(r'', text)  
@@ -122,10 +113,8 @@ class Preprocessing(object):
     def handle_stop_words(self, text: str) -> str:
         """Remove stop words
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text without stopwords.        
+        :params str text: Text for preprocesesing.
+        :return str: Text without stopwords.        
         """
         tokens = self.word_tokenize(text)
         #Remove las stopwords
@@ -136,51 +125,42 @@ class Preprocessing(object):
     def handle_contractions(self, text: str) -> str:
         """Expand contractions.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text without contractions.   
+        :params str text: Text for preprocesesing.
+        :return str: Text without contractions.   
         """
         expanded_words = [contractions.fix(word) for word in text.split(" ")]
         return " ".join(expanded_words)  
         
 
     def handle_negations(self, text: str) -> str:
-        """Handle negations.        
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text without negations.   
+        """Handle negations.  
+
+        :params str text: Text for preprocesesing.
+        :return str: Text without negations.   
         """
         return self.handle_contractions(text)
 
     def to_lowercase(self, text: str) -> str:
         """Tranform text to lowercase.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text in lowercase.   
+        :params str text: Text for preprocesesing.
+        :return str: Text in lowercase.   
         """
         return text.lower()
 
     def sent_tokenize(self, text: str) -> list:
         """Tokenize by sentece.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text tokenize by sentences.  
+        :params str text: Text for preprocesesing.
+        :return str: Text tokenize by sentences.  
         """
         return nltk.sent_tokenize(text)
 
     def word_tokenize(self, text: str) -> list:
         """Tokenize by word.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text tokenize by word.  
+        :params str text: Text for preprocesesing.
+        :return str: Text tokenize by word.  
         """
         return nltk.word_tokenize(text)
 
@@ -188,10 +168,8 @@ class Preprocessing(object):
     def pos_tagger(self, text: str) -> list:
         """Tagging part of speech.
         
-        Params:
-            text (str): Text for preprocesesing.
-        Return:
-            str: Text tagged.         
+        :params str text: Text for preprocesesing.
+        :return str: Text tagged.         
         """
         doc = self.nlp(text)
         return [(token, token.pos_) for token in doc]
