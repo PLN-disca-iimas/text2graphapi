@@ -8,7 +8,7 @@ with open(path.join(ROOT, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="text2graph-api",
+    name="text2graph_api",
     version="0.0.1",
     description="Use this library to transform raw text into differents graph representations.",
     long_description=long_description,

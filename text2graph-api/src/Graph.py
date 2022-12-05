@@ -6,6 +6,7 @@ import networkx
 class Graph(object): 
     """
     Graph general settings
+
     :param graph_type: str
     :param output_format: str
     """
@@ -15,7 +16,10 @@ class Graph(object):
         self.output_format = output_format
         self.graph = self.set_graph_type(graph_type)
 
+
     def set_graph_type(self, graph_type: str) -> networkx:
+        '''
+        '''
         graph = None
         if graph_type == 'MultiDiGraph':
             graph = nx.MultiDiGraph()
@@ -26,6 +30,7 @@ class Graph(object):
         else:
             graph = nx.Graph()
         return graph
+
 
     def plot_graph(self, graph):
         """This method allow to plot a networkx graph

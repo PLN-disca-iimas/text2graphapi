@@ -2,6 +2,7 @@ from src.Cooccurrence import Cooccurrence
 import os
 import json
 import time
+from text2graph_api.src.Cooccurrence  import Cooccurrence
 
 
 '''

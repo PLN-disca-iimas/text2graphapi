@@ -20,14 +20,6 @@ src.Graph module
    :undoc-members:
    :show-inheritance:
 
-src.GraphTransformation module
-------------------------------
-
-.. automodule:: src.GraphTransformation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 
