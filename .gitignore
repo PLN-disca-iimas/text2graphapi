@@ -2,7 +2,10 @@
 docs/_build/
 docs/sources/_templates
 __pycache__/
-text2graph-api/datasets/pan20/
+text2graphapi/datasets/pan20/
+text2graphapi/datasets/pan22/
 build/
 dist/
-text2graph_api.egg-info/
+text2graphapi.egg-info/
+notes.txt
+test_spacy.py

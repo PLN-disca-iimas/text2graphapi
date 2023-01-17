@@ -8,8 +8,8 @@ with open(path.join(ROOT, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="text2graph_api",
-    version="0.0.1",
+    name="text2graphapi",
+    version="0.0.6",
     description="Use this library to transform raw text into differents graph representations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -37,7 +37,8 @@ setup(
         'numpy',
         'pandas',
         'setuptools',
+        'sphinx',
         'spacy',
-        'sphinx'
+        'scipy'
     ]
 )
