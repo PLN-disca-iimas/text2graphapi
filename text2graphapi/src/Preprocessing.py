@@ -24,6 +24,7 @@ try:
     spacy.load('en_core_web_sm')
     spacy.load('es_core_news_md')
     spacy.load('fr_core_news_sm')
+    nltk.data.find('tokenizers/punkt')
     logger.info('Has already installed spacy models')
 except OSError:
     logger.info(
@@ -32,6 +33,8 @@ except OSError:
     download('en_core_web_sm')
     download('es_core_news_md')
     download('fr_core_news_sm')
+    nltk.download('punkt')
+
 
 
 class Preprocessing(object):

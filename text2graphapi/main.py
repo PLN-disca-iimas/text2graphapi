@@ -63,7 +63,7 @@ def text_to_cooccur_graph(corpus_docs):
             graph_type = 'DiGraph', 
             apply_prep = True, 
             parallel_exec = False,
-            window_size = 3, 
+            window_size = 2, 
             language = 'en', #es, en
             output_format = 'adj_matrix'
         )
@@ -101,8 +101,9 @@ def main():
     logger.info("TOTAL TIME:  %s seconds" % end_time)
 
     # show corpus_graph_docs
-    for g in corpus_graph_docs[:PRINT_NUM_OUTPUT_GRAPHS]:
-        print(g)
+    logger.info("*** Show Graphs Outputs: ")
+    for graph in corpus_graph_docs[:PRINT_NUM_OUTPUT_GRAPHS]:
+        print('\t', graph)
 
 if __name__ == '__main__':
     main()
