@@ -22,12 +22,14 @@ RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 try:
     spacy.load('en_core_web_sm')
     spacy.load('es_core_news_md')
-    logger.info('Has already installed spacy models')
+    nltk.data.find('tokenizers/punkt')
+    logger.info('Has already installed nltk/spacy models')
 except OSError:
-    logger.info("Downloading language model for the spaCy, this will only happen once")
+    logger.info("Downloading language model for the spaCy/nltk, this will only happen once")
     from spacy.cli import download
     download('en_core_web_sm')
     download('es_core_news_md')
+    nltk.download('punkt')
 
 
 class Preprocessing(object):
@@ -121,7 +123,7 @@ class Preprocessing(object):
         without_stopwords = [word for word in tokens if not self.stopwords.get(word.lower().strip(), False)]
         return " ".join(without_stopwords)
     
-
+ 
     def handle_contractions(self, text: str) -> str:
         """Expand contractions.
         
@@ -162,7 +164,8 @@ class Preprocessing(object):
         :params str text: Text for preprocesesing.
         :return str: Text tokenize by word.  
         """
-        return nltk.word_tokenize(text)
+        doc = self.nlp(text)
+        return [token for token in doc]
 
 
     def pos_tagger(self, text: str) -> list:

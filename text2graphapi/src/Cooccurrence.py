@@ -6,11 +6,14 @@ import sys
 import traceback
 import time
 from joblib import Parallel, delayed
+import warnings
 
-from src.Utils import Utils
-from src.Preprocessing import Preprocessing
-from src.GraphTransformation import GraphTransformation
-from src import Graph
+from text2graphapi.src.Utils import Utils
+from text2graphapi.src.Preprocessing import Preprocessing
+from text2graphapi.src.GraphTransformation import GraphTransformation
+from text2graphapi.src import Graph
+
+warnings.filterwarnings("ignore")
 
 # Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
@@ -58,28 +61,33 @@ class Cooccurrence(Graph.Graph):
 
 
     # get nodes an its attributes
-    def _get_entities(self, word_tokens: list) -> list:  
+    def _get_entities(self, text_doc: list) -> list:  
         nodes = []
-        word_tokens_tags = self.prep.pos_tagger(word_tokens)
+        word_tokens_tags = self.prep.pos_tagger(text_doc)
         for n in word_tokens_tags:
-            node = (n[0], {'pos_tag': n[1]}) # (word, {'node_attr': value})
-            nodes.append(node) 
+            node = (str(n[0]), {'pos_tag': n[1]}) # (word, {'node_attr': value})
+            nodes.append(node)
+
+        logger.debug("Nodes: %s", nodes)
         return nodes
 
 
     # get edges an its attributes
-    def _get_relations(self, word_tokens: list) -> list:
+    def _get_relations(self, text_doc: list) -> list:
+        text_doc_tokens = self.prep.word_tokenize(text_doc)
         edges = []
         d_cocc = defaultdict(int)
-        for i in range(len(word_tokens)):
-            word = word_tokens[i]
-            next_word = word_tokens[i+1 : i+1 + self.window_size]
+        for i in range(len(text_doc_tokens)):
+            word = text_doc_tokens[i]
+            next_word = text_doc_tokens[i+1 : i+1 + self.window_size]
             for t in next_word:
                 key = (word, t)
                 d_cocc[key] += 1
         for key, value in d_cocc.items():
             edge = (key[0], key[1], {'freq': value})  # (word_i, word_j, {'edge_attr': value})
             edges.append(edge) 
+
+        logger.debug("Edges: %s", edges)
         return edges
     
 
@@ -159,11 +167,12 @@ class Cooccurrence(Graph.Graph):
             
 
         """
-        logger.info("Init text to graph transformation")
+        logger.info("Init transformations: Text to Co-Ocurrence Graph")
+        logger.info("Number of Text Documents: %s", len(corpus_texts))
         corpus_output_graph, delayed_func = [], []
 
         for input_text in corpus_texts:
-            logger.debug('--- Processing doc ', input_text['id']) 
+            logger.debug('--- Processing doc %s ', str(input_text['id'])) 
             if self.parallel_exec == True: 
                 delayed_func.append(
                     self.utils.joblib_delayed(funct=self._transform_pipeline, params=input_text) 
@@ -174,5 +183,6 @@ class Cooccurrence(Graph.Graph):
         if self.parallel_exec == True: 
             corpus_output_graph = Parallel(n_jobs=-1)(delayed_func)
         
+        logger.info("Done transformations")
         return corpus_output_graph
 
