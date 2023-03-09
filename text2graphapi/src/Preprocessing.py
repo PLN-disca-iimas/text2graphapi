@@ -53,12 +53,12 @@ class Preprocessing(object):
         >>> pre.make_preprocessing(text)
     """
 
-    def __init__(self, lang='en', param_prepro={}):
+    def __init__(self, lang='en', steps_preprocessing={}):
         # , pos_tagger=nltk.pos_tag
         # self.pos_tagger = pos_tagger
         stopwords = []
         self.lang = lang
-        self.param_prepro
+        self.param_prepro = steps_preprocessing
         self.methods_preprocessing = {'to_lowercase': self.to_lowercase,
                                       'handle_negations': self.handle_negations,
                                       'handle_contractions': self.handle_contractions,
@@ -87,7 +87,9 @@ class Preprocessing(object):
             stopwords.append(line.strip())
         self.stopwords = dict.fromkeys(stopwords, True)
 
-    def make_preprocessing(self, text):
+
+    def prepocessing_pipeline(self, text):
+        logger.debug('Aplying Text Preprocessing')
         if len(self.param_prepro) == 0:
             # To do all preprocessing
             for method in self.methods_preprocessing:
@@ -97,6 +99,7 @@ class Preprocessing(object):
                 if self.param_prepro[method]:
                     self.methods_preprocessing[method](text)
 
+
     def handle_blank_spaces(self, text: str) -> str:
         """Remove blank spaces.
 
@@ -104,6 +107,7 @@ class Preprocessing(object):
         :return str: Text without blank space.
         """
         return re.sub(r'\s+', ' ', text).strip()
+
 
     def handle_non_ascii(self, text: str) -> str:
         """Remove special characters.
@@ -113,6 +117,7 @@ class Preprocessing(object):
         """
         regex_non_asccii = f'[^{string.ascii_letters}]'
         return re.sub(regex_non_asccii, " ", text)
+
 
     def handle_emoticons(self, text: str) -> str:
         """Transform emoji to text.
@@ -132,6 +137,7 @@ class Preprocessing(object):
 
         return kp_all_emoji_emoticons.replace_keywords(text)
 
+
     def handle_html_tags(self, text: str) -> str:
         """Remove any html tags.
 
@@ -141,6 +147,7 @@ class Preprocessing(object):
         html_pattern = re.compile('<.*?>')
         return html_pattern.sub(r'', text)
 
+
     def handle_stop_words(self, text: str) -> str:
         """Remove stop words
 
@@ -149,10 +156,10 @@ class Preprocessing(object):
         """
         tokens = self.word_tokenize(text)
         # Remove las stopwords
-        without_stopwords = [word for word in tokens if not self.stopwords.get(
-            word.lower().strip(), False)]
+        without_stopwords = [word for word in tokens if not self.stopwords.get(word.lower().strip(), False)]
         return " ".join(without_stopwords)
     
+
     def handle_contractions(self, text: str) -> str:
         """Expand contractions.
 
@@ -162,6 +169,7 @@ class Preprocessing(object):
         expanded_words = [contractions.fix(word) for word in text.split(" ")]
         return " ".join(expanded_words)
 
+
     def handle_negations(self, text: str) -> str:
         """Handle negations.  
 
@@ -169,6 +177,7 @@ class Preprocessing(object):
         :return str: Text without negations.   
         """
         return self.handle_contractions(text)
+
 
     def to_lowercase(self, text: str) -> str:
         """Tranform text to lowercase.
@@ -178,6 +187,7 @@ class Preprocessing(object):
         """
         return text.lower()
 
+
     def sent_tokenize(self, text: str) -> list:
         """Tokenize by sentece.
 
@@ -186,6 +196,7 @@ class Preprocessing(object):
         """
         return nltk.sent_tokenize(text)
 
+
     def word_tokenize(self, text: str) -> list:
         """Tokenize by word.
 
@@ -193,7 +204,9 @@ class Preprocessing(object):
         :return str: Text tokenize by word.  
         """
         doc = self.nlp(text)
-        return [token for token in doc]
+        return [str(token) for token in doc]
+        #return nltk.word_tokenize(text)
+
 
     def pos_tagger(self, text: str) -> list:
         """Tagging part of speech.

@@ -13,13 +13,27 @@ from text2graphapi.src.Preprocessing import Preprocessing
 from text2graphapi.src.GraphTransformation import GraphTransformation
 from text2graphapi.src import Graph
 
+# Configs
+TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
-
-# Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
+'''# TEST API PYPI
+if TEST_API_FROM == 'PYPI':
+    from text2graphapi.src.Utils import Utils
+    from text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.src import Graph
+# TEST API LOCAL
+else:
+    from src.Utils import Utils
+    from src.Preprocessing import Preprocessing
+    from src.GraphTransformation import GraphTransformation
+    from src import Graph'''
+    
 
 class Cooccurrence(Graph.Graph):
     """This module generate a word-coocurrence graph from raw text 
@@ -31,13 +45,13 @@ class Cooccurrence(Graph.Graph):
         :param bool apply_prep: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
-    def __init__(self, graph_type, output_format='', apply_prep=True, window_size=1, parallel_exec=True, language='en'):
+    def __init__(self, graph_type, output_format='', apply_preprocessing=True, window_size=1, parallel_exec=True, language='en', steps_preprocessing={}):
         """Constructor method
         """
-        self.apply_prep = apply_prep
+        self.apply_prep = apply_preprocessing
         self.parallel_exec = parallel_exec
         self.window_size = window_size
-        self.prep = Preprocessing(lang=language)
+        self.prep = Preprocessing(lang=language, steps_preprocessing=steps_preprocessing)
         self.utils = Utils()
         self.graph_trans = GraphTransformation()
         self.graph_type = graph_type
@@ -48,6 +62,7 @@ class Cooccurrence(Graph.Graph):
     # normalize text
     def _text_normalize(self, text: str) -> list:
         if self.apply_prep == True:
+            #self.prep.prepocessing_pipeline(text)
             text = self.prep.handle_blank_spaces(text)
             text = self.prep.handle_non_ascii(text)
             text = self.prep.handle_emoticons(text)
@@ -123,6 +138,7 @@ class Cooccurrence(Graph.Graph):
             output_dict['graph'] = self.graph_trans.transform(self.output_format, graph)
         except Exception as e:
             logger.error('Error: %s', str(e))
+            logger.debug('Error Detail: %s', str(traceback.format_exc()))
             output_dict['status'] = 'fail'
         finally:
             return output_dict

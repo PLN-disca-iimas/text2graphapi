@@ -10,7 +10,6 @@ import logging
     Main file to run testing for Library
 '''
 
-
 # ****** SETTINGS:
 # *** Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
@@ -20,7 +19,7 @@ logger.setLevel(logging.INFO)
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 DATASET = 'pan14' # posible values: pan14, pan15
-TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
 PRINT_NUM_OUTPUT_GRAPHS = 5
 INPUT_CORPUS_TEST = {
     'active': True,
@@ -29,12 +28,12 @@ INPUT_CORPUS_TEST = {
     ]
 }
 
-# TEST API LOCAL
+# TEST API PYPI
 if TEST_API_FROM == 'PYPY':
     from text2graphapi.src.Cooccurrence  import Cooccurrence
-# TEST API PYPI
+# TEST API LOCAL
 else:
-    from src.Cooccurrence import Cooccurrence 
+    from src.Cooccurrence import Cooccurrence
 
 
 def read_dataset(dataset, file):
@@ -61,7 +60,8 @@ def text_to_cooccur_graph(corpus_docs):
     # create co_occur object
     co_occur = Cooccurrence(
             graph_type = 'DiGraph', 
-            apply_prep = True, 
+            apply_preprocessing = True, 
+            steps_preprocessing = {},
             parallel_exec = False,
             window_size = 2, 
             language = 'en', #es, en
