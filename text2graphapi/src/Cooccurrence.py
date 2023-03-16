@@ -69,6 +69,7 @@ class Cooccurrence(Graph.Graph):
             text = self.prep.handle_html_tags(text)
             text = self.prep.handle_stop_words(text)
             text = self.prep.to_lowercase(text)
+            #text = self.prep.handle_blank_spaces(text)
 
         #preproc baseline: word_tokenize
         #text = self.prep.word_tokenize(text)
