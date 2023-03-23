@@ -26,9 +26,9 @@ PRINT_NUM_OUTPUT_GRAPHS = 5
 INPUT_CORPUS_TEST = {
     'active': False,
     'corpus_text_docs': [
-        {'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
-        #{'id': 1, 'doc': "bible answers organization distribution"},
-        #{'id': 2, 'doc': "atheists agnostics organization"},
+        #{'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
+        {'id': 1, 'doc': "bible answers organization distribution"},
+        {'id': 2, 'doc': "atheists agnostics organization"},
     ]
 }
 
@@ -73,12 +73,20 @@ def handle_20ng_dataset(corpus_docs, num_rows=-1):
 
 def handle_PAN_dataset(corpus_docs, num_rows=-1):
     new_corpus_docs = []
+    docs_id = []
     for line in corpus_docs[:num_rows]:
+        doc_text_1 = line['pair'][0]
+        doc_text_2 = line['pair'][1]
+        doc_id_1 = line['id'] + '_1'
+        doc_id_2 = line['id'] + '_2'
+        if (len(doc_text_1) == 0 or len(doc_text_2) == 0) or (line['id'] in docs_id):
+            continue
         docs = [
-            {"id": line['id'] + '_1', "doc": line['pair'][0]},
-            {"id": line['id'] + '_2', "doc": line['pair'][1]}
+            {"id": doc_id_1, "doc": doc_text_1},
+            {"id": doc_id_2, "doc": doc_text_2}
         ]
         new_corpus_docs.extend(docs)
+        docs_id.append(line['id'])
     return new_corpus_docs
 
 
@@ -117,7 +125,7 @@ def text_to_hetero_graph(corpus_docs):
 def main():
     # read dataset
 
-    DATASET = 'tass_emotion_detection'
+    '''DATASET = 'tass_emotion_detection'
     dataset_path = ROOT_DIR + '/text2graphapi/datasets/' + DATASET
     dataset = dataset_path + '/emotion.csv'
     dataset_df = pd.read_csv(dataset, encoding= 'unicode_escape')
@@ -127,7 +135,8 @@ def main():
     for d in dataset_list[:]:
         doc = {"id": id, "doc": d['texts']}
         corpus_text_docs.append(doc)
-        id += 1
+        id += 1'''
+
 
     '''DATASET = 'spanish_fake_news'
     dataset_path = ROOT_DIR + '/text2graphapi/datasets/' + DATASET
@@ -152,14 +161,20 @@ def main():
     corpus_text_docs = handle_20ng_dataset(newsgroups_dataset.data, num_rows=-1)   
     print(len(corpus_text_docs), corpus_text_docs[0])''' 
 
-    '''if INPUT_CORPUS_TEST['active'] == True:
+
+    if INPUT_CORPUS_TEST['active'] == True:
         logger.info("*** Reading dataset: INPUT_CORPUS_TEST")
         corpus_text_docs = INPUT_CORPUS_TEST['corpus_text_docs']
     else:
         logger.info("*** Reading dataset: %s", DATASET)
-        corpus = read_dataset(DATASET, file='train.jsonl')
-        corpus.extend(read_dataset(DATASET, file='test.jsonl'))
-        corpus_text_docs = handle_PAN_dataset(corpus, num_rows=-1)'''
+        train = read_dataset(DATASET, file='pan22-authorship-verification-training.jsonl')
+        train_truth = read_dataset(DATASET, file='pan22-authorship-verification-training-truth.jsonl')
+        #corpus.extend(read_dataset(DATASET, file='test.jsonl'))
+        print(len(train_truth), train_truth[0])
+        print(len(train), train[0])
+        corpus_text_docs = handle_PAN_dataset(train, num_rows=-1)
+
+    #print(len(corpus_text_docs), corpus_text_docs[0])
     
     # apply tranformations
     logger.info("*** Call API tranformation from: %s", TEST_API_FROM)
@@ -182,6 +197,7 @@ def main():
     for graph in corpus_graph_docs[:PRINT_NUM_OUTPUT_GRAPHS]:
         print('\t', graph)
         #print(graph['graph'].nodes)
+        #print(graph['graph'].edges)
 
 if __name__ == '__main__':
     main()

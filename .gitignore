@@ -4,8 +4,12 @@ docs/sources/_templates
 __pycache__/
 text2graphapi/datasets/pan20/
 text2graphapi/datasets/pan22/
+text2graphapi/datasets/spanish_fake_news/
+text2graphapi/datasets/tass_emotion_detection/
 build/
 dist/
 text2graphapi.egg-info/
 notes.txt
 test_spacy.py
+output_text2graphapi/
+text2graphapi/output_text2graphapi/

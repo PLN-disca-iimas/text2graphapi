@@ -7,11 +7,17 @@ import traceback
 import time
 from math import log
 from joblib import Parallel, delayed
+from sklearn.feature_extraction.text import TfidfVectorizer
+import pandas as pd
+import collections
+import itertools
 
-from text2graphapi.src.Utils import Utils
-from text2graphapi.src.Preprocessing import Preprocessing
-from text2graphapi.src.GraphTransformation import GraphTransformation
-from text2graphapi.src import Graph
+from src.Utils import Utils
+from src.Preprocessing import Preprocessing
+from src.GraphTransformation import GraphTransformation
+from src import Graph
+from src import configs
+
 
 # Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
@@ -44,175 +50,75 @@ class Heterogeneous(Graph.Graph):
     # get word set and word frequency
     def __build_vocab(self, corpus):
         word_set = set()
-        word_freq = {}
+        doc_words_list = []
         for i in range(len(corpus)):
             doc_words = corpus[i]['doc']
             words = self.prep.word_tokenize(doc_words)
+            doc_words_list.append({'doc': i, 'words': words})
             for word in words:
                 word_set.add(word)
-                if word in word_freq:
-                    word_freq[word] += 1
-                else:
-                    word_freq[word] = 1
-        return list(word_set), word_freq
-    
 
-    # get word_id_map
-    # assign intetger ID to each word in vocabulary -> {w1: 1, w2: 2, ...}
-    def __get_word_id_map(self, vocab):
-        word_id_map = {}
-        for i in range(len(vocab)):
-            word_id_map[vocab[i]] = i
-        return word_id_map
-
-
-    # get word_doc_freq
-    # frequency for each word in docs -> {w1: 20, w2: 3', ...} 
-    def __get_word_doc_freq(self, word_doc_list):
-        word_doc_freq = {}
-        for word, doc_list in word_doc_list.items():
-            word_doc_freq[word] = len(doc_list)
-        return word_doc_freq
-
-
-    # get word_doc_list
-    # list docs where appear each word -> {w: [d1,d2,...], w2: [d3,d4,...], ...}
-    def __get_word_doc_list(self, corpus):
-        word_doc_list = {}
-        for i in range(len(corpus)):
-            doc_words = corpus[i]['doc']
-            words = self.prep.word_tokenize(doc_words)
-            appeared = set()
-            for word in words:
-                if word in appeared:
-                    continue
-                if word in word_doc_list:
-                    doc_list = word_doc_list[word]
-                    doc_list.append(i)
-                    word_doc_list[word] = doc_list
-                else:
-                    word_doc_list[word] = [i]
-                appeared.add(word)
-        return word_doc_list
+        return doc_words_list, list(word_set)
 
 
     # get windows
     # words windows based on window_size param -> [[w1,w2,...], [w3,w4,...], ...]
-    def __get_windows(self, corpus, window_size):
+    def __get_windows(self, doc_words_list, window_size):
+        word_window_freq = defaultdict(int)  
+        word_pair_count = defaultdict(int)
         windows = []
-        for i in range(len(corpus)):
-            doc_words = corpus[i]['doc']
-            words = self.prep.word_tokenize(doc_words)
-            length = len(words)
+
+        for doc in doc_words_list:
+            windows_tmp = []
+            doc_words = doc['words']
+            length = len(doc_words)
             if length <= window_size:
-                windows.append(words)
+                windows_tmp.extend(doc_words)
             else:
                 for j in range(length - window_size + 1):
-                    window = words[j: j + window_size]
-                    windows.append(window)
-        return windows
+                    window = doc_words[j: j + window_size]
+                    windows_tmp.extend(window)
 
-    # get windows word frequency
-    # word frequency in windows -> {w1: 4, w2: 5,  ...}
-    def __get_word_window_freq(self, windows):
-        word_window_freq = {}
-        for window in windows[:]:
-            appeared = set()
-            for i in range(len(window)):
-                if window[i] in appeared:
-                    continue
-                if window[i] in word_window_freq:
-                    word_window_freq[window[i]] += 1
-                else:
-                    word_window_freq[window[i]] = 1
-                appeared.add(window[i])
-        return word_window_freq
+            for word in windows_tmp:
+                word_window_freq[word] += 1
 
+            for word_pair in itertools.combinations(windows_tmp, 2):
+                word_pair_count[word_pair] += 1
+            
+            windows.extend(windows_tmp)
 
-    # get word pair count in windows
-    # word frequency in windows -> {'w1,w2': 4, 'w5,w6': 5,  ...}
-    def __get_word_pair_count(self, windows, word_id_map):
-        word_pair_count = {}
-        for window in windows:
-            for i in range(1, len(window)):
-                for j in range(0, i):
-                    word_i = window[i]
-                    word_i_id = word_id_map[word_i]
-                    word_j = window[j]
-                    word_j_id = word_id_map[word_j]
-                    
-                    if word_i_id == word_j_id:
-                        continue
-                    word_pair_str = str(word_i_id) + ',' + str(word_j_id)
-                    if word_pair_str in word_pair_count:
-                        word_pair_count[word_pair_str] += 1
-                    else:
-                        word_pair_count[word_pair_str] = 1
-                    # two orders
-                    word_pair_str = str(word_j_id) + ',' + str(word_i_id)
-                    if word_pair_str in word_pair_count:
-                        word_pair_count[word_pair_str] += 1
-                    else:
-                        word_pair_count[word_pair_str] = 1
-        return word_pair_count
-
+        return word_window_freq, word_pair_count, windows
+    
 
     # get pmi measure
     # pmi for pair of word,word -> {'w1,w2': pmi, 'w5,w6': pmi,  ...}
     def __get_pmi(self, word_pair_count, word_window_freq, vocab, window_size):
         word_to_word_pmi = []
-        for key in word_pair_count:
-            temp = key.split(',')
-            i = int(temp[0])
-            j = int(temp[1])
-            count = word_pair_count[key]
-            word_freq_i = word_window_freq[vocab[i]]
-            word_freq_j = word_window_freq[vocab[j]]
+        for word_pair, count in word_pair_count.items():
+            word_freq_i = word_window_freq[word_pair[0]]
+            word_freq_j = word_window_freq[word_pair[1]]
             pmi = log((1.0 * count / window_size) / (1.0 * word_freq_i * word_freq_j/(window_size * window_size)))
             if pmi <= 0:
                 continue
-            word_to_word_pmi.append({key: pmi})
+            word_to_word_pmi.append((word_pair[0], word_pair[1], {'pmi': round(pmi, 2)}))
         return word_to_word_pmi      
-
-    # get doc word frequency
-    # freq of pair doc,word -> {'doc1,word1': 3, 'doc1,word2': 3,  ...}
-    def __get_doc_word_frequency(self, corpus, word_id_map):
-        doc_word_freq = {}
-        for doc_id in range(len(corpus)):
-            doc_words = corpus[doc_id]['doc']
-            words = self.prep.word_tokenize(doc_words)
-            for word in words:
-                word_id = word_id_map[word]
-                doc_word_str = str(doc_id) + ',' + str(word_id)
-                if doc_word_str in doc_word_freq:
-                    doc_word_freq[doc_word_str] += 1
-                else:
-                    doc_word_freq[doc_word_str] = 1
-        return doc_word_freq
-
+    
 
     # get tfidf meausure
     # tfid for relation doc,word -> {'doc1,word1': tfidf, 'doc1,word2': tfidf,  ...}
-    def __get_tfidf(self, corpus, word_id_map, doc_word_freq, word_doc_freq, vocab):
-        word_to_doc_tfid = []
-        for i in range(len(corpus)):
-            doc_words = corpus[i]['doc']
-            words = self.prep.word_tokenize(doc_words)
-            doc_word_set = set()
-            for word in words:
-                if word in doc_word_set:
-                    continue
-                j = word_id_map[word]
-                key = str(i) + ',' + str(j)
-                freq = doc_word_freq[key]
-                idf = log(1.0 * len(corpus) /  word_doc_freq[vocab[j]])
-                word_to_doc_tfid.append({key: freq * idf})
-                doc_word_set.add(word)
-        return word_to_doc_tfid
+    def __get_tfidf(self, corpus_docs_list, vocab):
+        vectorizer = TfidfVectorizer(vocabulary=vocab, norm=None, use_idf=True, smooth_idf=False, sublinear_tf=False)
+        tfidf = vectorizer.fit_transform(corpus_docs_list)
+        words_docs_tfids = []
+        for ind, row in enumerate(tfidf):
+            for col_ind, value in zip(row.indices, row.data):
+                edge = ('D-' + str(ind+1), vocab[col_ind], {'tfidf': round(value, 2)})
+                words_docs_tfids.append(edge)
+        return words_docs_tfids
 
 
     # normalize text
-    def __text_normalize(self, text: str) -> list:
+    def __text_normalize(self, text: dict) -> dict:
         text = self.prep.handle_blank_spaces(text)
         text = self.prep.handle_non_ascii(text)
         text = self.prep.handle_emoticons(text)
@@ -233,38 +139,33 @@ class Heterogeneous(Graph.Graph):
             for word in doc_words:
                 node_word = (str(word), {})
                 nodes.append(node_word)
-        return nodes
-
+       
 
    # get edges an its attributes
-    def __get_relations(self, words_pmi, words_docs_tfids, vocab) -> list:  
+    def __get_relations(self, corpus_docs_list, doc_words_list, vocab) -> list:  
         edges = []
-        for w_w_pmi in words_pmi:
-            for key, value in w_w_pmi.items():
-                word_1, word_2 = key.split(',')
-                word_1 = vocab[int(word_1)]
-                word_2 = vocab[int(word_2)]
-                edge = (word_1, word_2, {'pmi': round(value, 2)})  # (word_i, word_j, {'pmi': value})
-                edges.append(edge) 
-        for w_d_tfidf in words_docs_tfids:
-            for key, value in w_d_tfidf.items():
-                doc, word = key.split(',')
-                word = vocab[int(word)]
-                edge = ('D-' + str(doc), word, {'tfidf': round(value, 2)})  # (doc, word, {'tfidf': value})
-                edges.append(edge) 
+        #tfidf
+        word_to_doc_tfidf = self.__get_tfidf(corpus_docs_list, vocab)
+        edges.extend(word_to_doc_tfidf)
+        #pmi
+        word_window_freq, word_pair_count, windows = self.__get_windows(doc_words_list, self.window_size)
+        word_to_word_pmi = self.__get_pmi(word_pair_count, word_window_freq, vocab, len(windows))
+        edges.extend(word_to_word_pmi)
+        # return relations/edges
         return edges
 
 
     # build nx-graph based of nodes and edges
-    def __build_graph(self, nodes: list, edges: list) -> networkx:
+    def __build_graph(self, edges: list) -> networkx:
         # pending validations
         graph = super().set_graph_type(self.graph_type)
-        graph.add_nodes_from(nodes)
+        #graph.add_nodes_from(nodes)
         graph.add_edges_from(edges)
         return graph
 
 
     def __transform_pipeline(self, corpus_docs: list) -> list:
+        corpus_docs_norm = []
         output_dict = {
             'doc_id': 1, 
             'graph': None, 
@@ -274,30 +175,29 @@ class Heterogeneous(Graph.Graph):
         }
         try:
             #1. text preprocessing
+            logger.info("1. text preprocessing")
+            corpus_docs_list = []
             if self.apply_prep == True:
                 for i in corpus_docs:
                     i['doc'] = self.__text_normalize(i['doc'])
+                    corpus_docs_list.append(i['doc'])
+            self.utils.save_data(data=corpus_docs, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
+            
             #2. build vocabulary
-            vocab, word_freq = self.__build_vocab(corpus_docs)
-            #3. get word_doc_list AND word_doc_freq AND word_id_map
-            word_doc_list = self.__get_word_doc_list(corpus_docs)
-            word_doc_freq = self.__get_word_doc_freq(word_doc_list)
-            word_id_map = self.__get_word_id_map(vocab)
-            #4. get windows AND word window frequency
-            windows = self.__get_windows(corpus_docs, self.window_size)
-            word_window_freq = self.__get_word_window_freq(windows)
-            #5. get word pair count AND pmi measure
-            word_pair_count = self.__get_word_pair_count(windows, word_id_map)
-            words_pmi = self.__get_pmi(word_pair_count, word_window_freq, vocab, len(windows))
-            #6. get doc word frequency AND tfidf measure
-            doc_word_frequency = self.__get_doc_word_frequency(corpus_docs, word_id_map)
-            words_docs_tfids = self.__get_tfidf(corpus_docs, word_id_map, doc_word_frequency, word_doc_freq, vocab)
-            #7. get node/entities
-            nodes = self.__get_entities(corpus_docs)
-            #8. get edges/relations
-            edges = self.__get_relations(words_pmi, words_docs_tfids, vocab)
-            #9. build graph
-            graph = self.__build_graph(nodes, edges)
+            logger.info("2. build vocabulary")
+            doc_words_list, vocab = self.__build_vocab(corpus_docs)
+
+            #3. get node/entities
+            logger.info("3. get node")
+            #nodes = self.__get_entities(corpus_docs_list)
+
+            #4. get edges/relations
+            logger.info("4. get edges")
+            edges = self.__get_relations(corpus_docs_list, doc_words_list, vocab)
+            
+            #5. build graph
+            logger.info("5. build graph")
+            graph = self.__build_graph(edges)
             output_dict['number_of_edges'] = graph.number_of_edges()
             output_dict['number_of_nodes'] = graph.number_of_nodes()
             #10. graph_transformation
@@ -313,7 +213,10 @@ class Heterogeneous(Graph.Graph):
     def transform(self, corpus_docs: list) -> list:
         logger.info("Init transformations: Text to Heterogeneous Graph")
         logger.info("Number of Text Documents: %s", len(corpus_docs))
+
         corpus_output_graph = [self.__transform_pipeline(corpus_docs)]
+        self.utils.save_data(data=corpus_output_graph, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_graph', compress=1)
+
         logger.info("Done transformations")
         return corpus_output_graph
     
