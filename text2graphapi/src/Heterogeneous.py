@@ -85,7 +85,7 @@ class Heterogeneous(Graph.Graph):
             doc_words = doc['words']
             length = len(doc_words)
 
-            if (i+1) == configs.NUM_PRINT_ITER * (i+1//configs.NUM_PRINT_ITER):
+            if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
                 logger.debug("\t Iter %s out of %s", str(i+1), str(len_doc_words_list))
 
             if length <= window_size:
@@ -131,7 +131,7 @@ class Heterogeneous(Graph.Graph):
         len_tfidf = tfidf.shape[0]
 
         for ind, row in enumerate(tfidf):
-            if (ind+1) == configs.NUM_PRINT_ITER * (ind+1//configs.NUM_PRINT_ITER):
+            if (ind+1) == configs.NUM_PRINT_ITER * ((ind+1)//configs.NUM_PRINT_ITER):
                 logger.debug("\t Iter %s out of %s", str(ind+1), str(len_tfidf))
             for col_ind, value in zip(row.indices, row.data):
                 edge = ('D-' + str(ind+1), vocab[col_ind], {'tfidf': round(value, 2)})
@@ -212,7 +212,7 @@ class Heterogeneous(Graph.Graph):
                         corpus_docs_list.append(text_normalize)
                         vocab.update(set(words_tokenize))
 
-                        if (i+1) == configs.NUM_PRINT_ITER * (i+1//configs.NUM_PRINT_ITER):
+                        if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
                             logger.debug("\t Iter %s out of %s", str(i+1), str(len_corpus_docs))
                     vocab = list(vocab)
                     self.utils.save_data(data=corpus_docs_list, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)

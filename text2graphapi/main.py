@@ -171,7 +171,7 @@ def main():
         train = read_dataset(DATASET, file='pan22-authorship-verification-training.jsonl')
         train_truth = read_dataset(DATASET, file='pan22-authorship-verification-training-truth.jsonl')
         #corpus.extend(read_dataset(DATASET, file='test.jsonl'))
-        corpus_text_docs = handle_PAN_dataset(train, num_rows=2)
+        corpus_text_docs = handle_PAN_dataset(train, num_rows=-1)
 
     #print(len(corpus_text_docs), corpus_text_docs[0])
     
