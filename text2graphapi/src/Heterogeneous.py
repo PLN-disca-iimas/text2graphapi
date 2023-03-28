@@ -79,16 +79,14 @@ class Heterogeneous(Graph.Graph):
         word_pair_count = defaultdict(int)
         len_doc_words_list = len(doc_words_list)
         len_windows = 0
-        counter = 0
 
-        for doc in doc_words_list:
+        for i, doc in enumerate(doc_words_list):
             windows = []
             doc_words = doc['words']
             length = len(doc_words)
 
-            counter += 1
-            if counter == configs.NUM_PRINT_ITER * (counter/configs.NUM_PRINT_ITER):
-                logger.debug("\t Iter %s out of %s", str(counter), str(len_doc_words_list))
+            if (i+1) == configs.NUM_PRINT_ITER * (i+1//configs.NUM_PRINT_ITER):
+                logger.debug("\t Iter %s out of %s", str(i+1), str(len_doc_words_list))
 
             if length <= window_size:
                 windows.append(doc_words)
@@ -131,12 +129,10 @@ class Heterogeneous(Graph.Graph):
         tfidf = vectorizer.fit_transform(corpus_docs_list)
         words_docs_tfids = []
         len_tfidf = tfidf.shape[0]
-        counter = 0
 
         for ind, row in enumerate(tfidf):
-            counter += 1
-            if counter == configs.NUM_PRINT_ITER * (counter/configs.NUM_PRINT_ITER):
-                logger.debug("\t Iter %s out of %s", str(counter), str(len_tfidf))
+            if (ind+1) == configs.NUM_PRINT_ITER * (ind+1//configs.NUM_PRINT_ITER):
+                logger.debug("\t Iter %s out of %s", str(ind+1), str(len_tfidf))
             for col_ind, value in zip(row.indices, row.data):
                 edge = ('D-' + str(ind+1), vocab[col_ind], {'tfidf': round(value, 2)})
                 words_docs_tfids.append(edge)
@@ -152,7 +148,8 @@ class Heterogeneous(Graph.Graph):
         text = self.prep.handle_stop_words(text)
         text = self.prep.to_lowercase(text)
         text = self.prep.handle_blank_spaces(text)
-        return text
+        word_tokenize = self.prep.word_tokenize(text)
+        return text, word_tokenize
     
 
     # get nodes an its attributes
@@ -205,28 +202,27 @@ class Heterogeneous(Graph.Graph):
             doc_words_list = []
             len_corpus_docs = len(corpus_docs)
             vocab = set()
-            counter = 0
+
             if not self.load_preprocessing: 
-                logger.debug('\t Applying norm text')
+                logger.debug('Applying norm text')
                 if self.apply_prep == True:
                     for i in range(len_corpus_docs):
-                        corpus_docs[i]['doc'] = self.__text_normalize(corpus_docs[i]['doc'])
-                        words = self.prep.word_tokenize(corpus_docs[i]['doc'])
-                        doc_words_list.append({'doc': i, 'words': words})
-                        corpus_docs_list.append(corpus_docs[i]['doc'])
-                        vocab.update(set(words))
-                        counter += 1
-                        if counter == configs.NUM_PRINT_ITER * (counter/configs.NUM_PRINT_ITER):
-                            logger.debug("\t Iter %s out of %s", str(counter), str(len_corpus_docs))
+                        text_normalize, words_tokenize = self.__text_normalize(corpus_docs[i]['doc'])
+                        doc_words_list.append({'doc': i, 'words': words_tokenize})
+                        corpus_docs_list.append(text_normalize)
+                        vocab.update(set(words_tokenize))
+
+                        if (i+1) == configs.NUM_PRINT_ITER * (i+1//configs.NUM_PRINT_ITER):
+                            logger.debug("\t Iter %s out of %s", str(i+1), str(len_corpus_docs))
                     vocab = list(vocab)
-                    self.utils.save_data(data=corpus_docs, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
+                    self.utils.save_data(data=corpus_docs_list, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
                     self.utils.save_data(data=vocab, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='vocab', compress=1)
                 else:
                     corpus_docs_list = corpus_docs
             else:
                 logger.debug('\t Loading norm text')
                 corpus_docs_list = self.utils.load_data(file_name='corpus_normalized', path=configs.OUTPUT_DIR_HETERO_PATH)
-                corpus_docs_list = self.utils.load_data(file_name='vocab', path=configs.OUTPUT_DIR_HETERO_PATH)
+                vocab = self.utils.load_data(file_name='vocab', path=configs.OUTPUT_DIR_HETERO_PATH)
 
             #2. build vocabulary
             #logger.info("2. build vocabulary")
