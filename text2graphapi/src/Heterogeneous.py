@@ -203,16 +203,21 @@ class Heterogeneous(Graph.Graph):
             logger.info("1. text preprocessing")
             corpus_docs_list = []
             doc_words_list = []
+            len_corpus_docs = len(corpus_docs)
             vocab = set()
+            counter = 0
             if not self.load_preprocessing: 
                 logger.debug('\t Applying norm text')
                 if self.apply_prep == True:
-                    for i in range(len(corpus_docs)):
+                    for i in range(len_corpus_docs):
                         corpus_docs[i]['doc'] = self.__text_normalize(corpus_docs[i]['doc'])
                         words = self.prep.word_tokenize(corpus_docs[i]['doc'])
                         doc_words_list.append({'doc': i, 'words': words})
                         corpus_docs_list.append(corpus_docs[i]['doc'])
                         vocab.update(set(words))
+                        counter += 1
+                        if counter == configs.NUM_PRINT_ITER:
+                            logger.debug("\t Iter %s out of %s", str(counter), str(len_corpus_docs))
                     vocab = list(vocab)
                     self.utils.save_data(data=corpus_docs, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
                     self.utils.save_data(data=vocab, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='vocab', compress=1)
