@@ -113,6 +113,7 @@ def text_to_hetero_graph(corpus_docs):
         graph_type = 'Graph',
         parallel_exec = False,
         apply_preprocessing = True, 
+        load_preprocessing = False, 
         steps_preprocessing = {},
         language = 'es', #es, en,
         output_format = 'networkx',
@@ -170,8 +171,6 @@ def main():
         train = read_dataset(DATASET, file='pan22-authorship-verification-training.jsonl')
         train_truth = read_dataset(DATASET, file='pan22-authorship-verification-training-truth.jsonl')
         #corpus.extend(read_dataset(DATASET, file='test.jsonl'))
-        print(len(train_truth), train_truth[0])
-        print(len(train), train[0])
         corpus_text_docs = handle_PAN_dataset(train, num_rows=-1)
 
     #print(len(corpus_text_docs), corpus_text_docs[0])

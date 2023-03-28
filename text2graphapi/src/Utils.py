@@ -29,10 +29,24 @@ class Utils(object):
 
 
     def save_data(self, data, file_name, path=configs.OUTPUT_DIR_PATH, format_file='.pkl', compress=False):
-        if not os.path.exists(path):
+        if not self.exists_file(path):
             self.create_dir(path)
         path_file = os.path.join(path, file_name + format_file)
         joblib.dump(data, path_file, compress=compress)
+
+
+    def load_data(self, file_name, path=configs.OUTPUT_DIR_PATH, format_file='.pkl', compress=False):
+        path_file = os.path.join(path, file_name + format_file)
+        if not self.exists_file(path_file):
+            raise Exception("File to load doesn't exists")
+        return joblib.load(path_file)
+
+
+    def exists_file(self, path):
+        if os.path.exists(path):
+            return True
+        else:
+            return False
 
 
     def create_dir(self, path):
@@ -40,3 +54,4 @@ class Utils(object):
             os.makedirs(path)
         except Exception as e:
             logger.error('Error: %s', str(e))
+

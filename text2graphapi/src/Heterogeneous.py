@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import collections
 import itertools
+import os
 
 from src.Utils import Utils
 from src.Preprocessing import Preprocessing
@@ -33,7 +34,16 @@ class Heterogeneous(Graph.Graph):
         :param bool apply_preprocessing: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
-    def __init__(self, graph_type, output_format='', apply_preprocessing=True, window_size=20, parallel_exec=True, language='en', steps_preprocessing={}):
+    def __init__(self, 
+                graph_type, 
+                output_format='', 
+                window_size=20, 
+                parallel_exec=True, 
+                language='en', 
+                apply_preprocessing=True, 
+                steps_preprocessing={},
+                load_preprocessing=False
+            ):
         """Constructor method
         """
         self.apply_prep = apply_preprocessing
@@ -44,6 +54,7 @@ class Heterogeneous(Graph.Graph):
         self.graph_trans = GraphTransformation()
         self.graph_type = graph_type
         self.output_format = output_format
+        self.load_preprocessing = load_preprocessing
 
 
     # build vocab
@@ -57,47 +68,55 @@ class Heterogeneous(Graph.Graph):
             doc_words_list.append({'doc': i, 'words': words})
             for word in words:
                 word_set.add(word)
-
         return doc_words_list, list(word_set)
 
 
     # get windows
     # words windows based on window_size param -> [[w1,w2,...], [w3,w4,...], ...]
     def __get_windows(self, doc_words_list, window_size):
+        logger.debug('\t Getting windows')
         word_window_freq = defaultdict(int)  
         word_pair_count = defaultdict(int)
-        windows = []
+        len_doc_words_list = len(doc_words_list)
+        len_windows = 0
+        counter = 0
 
         for doc in doc_words_list:
-            windows_tmp = []
+            windows = []
             doc_words = doc['words']
             length = len(doc_words)
+
+            counter += 1
+            if counter == configs.NUM_PRINT_ITER:
+                logger.debug("\t Iter %s out of %s", str(counter), str(len_doc_words_list))
+
             if length <= window_size:
-                windows_tmp.extend(doc_words)
+                windows.append(doc_words)
             else:
                 for j in range(length - window_size + 1):
                     window = doc_words[j: j + window_size]
-                    windows_tmp.extend(window)
+                    windows.append(list(set(window)))
 
-            for word in windows_tmp:
-                word_window_freq[word] += 1
+            for window in windows:
+                for word in window:
+                    word_window_freq[word] += 1
+                for word_pair in itertools.combinations(window, 2):
+                    word_pair_count[word_pair] += 1    
+            len_windows += len(windows)
 
-            for word_pair in itertools.combinations(windows_tmp, 2):
-                word_pair_count[word_pair] += 1
-            
-            windows.extend(windows_tmp)
-
-        return word_window_freq, word_pair_count, windows
+        return word_window_freq, word_pair_count, len_windows
     
 
     # get pmi measure
     # pmi for pair of word,word -> {'w1,w2': pmi, 'w5,w6': pmi,  ...}
-    def __get_pmi(self, word_pair_count, word_window_freq, vocab, window_size):
+    def __get_pmi(self, doc_words_list, window_size):
+        logger.debug('Get PMI measure')
+        word_window_freq, word_pair_count, len_windows = self.__get_windows(doc_words_list, window_size)
         word_to_word_pmi = []
         for word_pair, count in word_pair_count.items():
             word_freq_i = word_window_freq[word_pair[0]]
             word_freq_j = word_window_freq[word_pair[1]]
-            pmi = log((1.0 * count / window_size) / (1.0 * word_freq_i * word_freq_j/(window_size * window_size)))
+            pmi = log((1.0 * count / len_windows) / (1.0 * word_freq_i * word_freq_j/(len_windows * len_windows)))
             if pmi <= 0:
                 continue
             word_to_word_pmi.append((word_pair[0], word_pair[1], {'pmi': round(pmi, 2)}))
@@ -107,10 +126,17 @@ class Heterogeneous(Graph.Graph):
     # get tfidf meausure
     # tfid for relation doc,word -> {'doc1,word1': tfidf, 'doc1,word2': tfidf,  ...}
     def __get_tfidf(self, corpus_docs_list, vocab):
-        vectorizer = TfidfVectorizer(vocabulary=vocab, norm=None, use_idf=True, smooth_idf=False, sublinear_tf=False)
+        logger.debug('Get TF-IDF measure')
+        vectorizer = TfidfVectorizer(vocabulary=vocab, norm=None, use_idf=True, smooth_idf=False, sublinear_tf=False, lowercase=False, tokenizer=None)
         tfidf = vectorizer.fit_transform(corpus_docs_list)
         words_docs_tfids = []
+        len_tfidf = tfidf.shape[0]
+        counter = 0
+
         for ind, row in enumerate(tfidf):
+            counter += 1
+            if counter == configs.NUM_PRINT_ITER:
+                logger.debug("\t Iter %s out of %s", str(counter), str(len_tfidf))
             for col_ind, value in zip(row.indices, row.data):
                 edge = ('D-' + str(ind+1), vocab[col_ind], {'tfidf': round(value, 2)})
                 words_docs_tfids.append(edge)
@@ -148,8 +174,7 @@ class Heterogeneous(Graph.Graph):
         word_to_doc_tfidf = self.__get_tfidf(corpus_docs_list, vocab)
         edges.extend(word_to_doc_tfidf)
         #pmi
-        word_window_freq, word_pair_count, windows = self.__get_windows(doc_words_list, self.window_size)
-        word_to_word_pmi = self.__get_pmi(word_pair_count, word_window_freq, vocab, len(windows))
+        word_to_word_pmi = self.__get_pmi(doc_words_list, self.window_size)
         edges.extend(word_to_word_pmi)
         # return relations/edges
         return edges
@@ -165,7 +190,6 @@ class Heterogeneous(Graph.Graph):
 
 
     def __transform_pipeline(self, corpus_docs: list) -> list:
-        corpus_docs_norm = []
         output_dict = {
             'doc_id': 1, 
             'graph': None, 
@@ -174,29 +198,45 @@ class Heterogeneous(Graph.Graph):
             'status': 'success'
         }
         try:
+
             #1. text preprocessing
             logger.info("1. text preprocessing")
             corpus_docs_list = []
-            if self.apply_prep == True:
-                for i in corpus_docs:
-                    i['doc'] = self.__text_normalize(i['doc'])
-                    corpus_docs_list.append(i['doc'])
-            self.utils.save_data(data=corpus_docs, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
-            
+            doc_words_list = []
+            vocab = set()
+            if not self.load_preprocessing: 
+                logger.debug('\t Applying norm text')
+                if self.apply_prep == True:
+                    for i in range(len(corpus_docs)):
+                        corpus_docs[i]['doc'] = self.__text_normalize(corpus_docs[i]['doc'])
+                        words = self.prep.word_tokenize(corpus_docs[i]['doc'])
+                        doc_words_list.append({'doc': i, 'words': words})
+                        corpus_docs_list.append(corpus_docs[i]['doc'])
+                        vocab.update(set(words))
+                    vocab = list(vocab)
+                    self.utils.save_data(data=corpus_docs, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
+                    self.utils.save_data(data=vocab, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='vocab', compress=1)
+                else:
+                    corpus_docs_list = corpus_docs
+            else:
+                logger.debug('\t Loading norm text')
+                corpus_docs_list = self.utils.load_data(file_name='corpus_normalized', path=configs.OUTPUT_DIR_HETERO_PATH)
+                corpus_docs_list = self.utils.load_data(file_name='vocab', path=configs.OUTPUT_DIR_HETERO_PATH)
+
             #2. build vocabulary
-            logger.info("2. build vocabulary")
-            doc_words_list, vocab = self.__build_vocab(corpus_docs)
+            #logger.info("2. build vocabulary")
+            #doc_words_list, vocab = self.__build_vocab(corpus_docs)
 
             #3. get node/entities
-            logger.info("3. get node")
+            #logger.info("3. get node")
             #nodes = self.__get_entities(corpus_docs_list)
 
             #4. get edges/relations
-            logger.info("4. get edges")
+            logger.info("2. get nodes/edges")
             edges = self.__get_relations(corpus_docs_list, doc_words_list, vocab)
             
             #5. build graph
-            logger.info("5. build graph")
+            logger.info("3. build graph")
             graph = self.__build_graph(edges)
             output_dict['number_of_edges'] = graph.number_of_edges()
             output_dict['number_of_nodes'] = graph.number_of_nodes()
