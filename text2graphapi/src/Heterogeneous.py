@@ -12,18 +12,29 @@ import pandas as pd
 import collections
 import itertools
 import os
-
-from src.Utils import Utils
-from src.Preprocessing import Preprocessing
-from src.GraphTransformation import GraphTransformation
-from src import Graph
-from src import configs
-
+import warnings
 
 # Logging configs
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
+warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+
+logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
+if TEST_API_FROM == 'PYPI':
+    from text2graphapi.src.Utils import Utils
+    from text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.src import Graph
+    from text2graphapi.src import configs
+else:
+    from src.Utils import Utils
+    from src.Preprocessing import Preprocessing
+    from src.GraphTransformation import GraphTransformation
+    from src import Graph
+    from src import configs
 
 
 class Heterogeneous(Graph.Graph):
@@ -38,7 +49,7 @@ class Heterogeneous(Graph.Graph):
                 graph_type, 
                 output_format='', 
                 window_size=20, 
-                parallel_exec=True, 
+                parallel_exec=False, 
                 language='en', 
                 apply_preprocessing=True, 
                 steps_preprocessing={},
@@ -140,11 +151,13 @@ class Heterogeneous(Graph.Graph):
 
 
     # normalize text
-    def __text_normalize(self, text: dict) -> dict:
+    def _text_normalize(self, text: dict) -> dict:
         text = self.prep.handle_blank_spaces(text)
         text = self.prep.handle_non_ascii(text)
         text = self.prep.handle_emoticons(text)
         text = self.prep.handle_html_tags(text)
+        text = self.prep.handle_negations(text)
+        text = self.prep.handle_contractions(text)
         text = self.prep.handle_stop_words(text)
         text = self.prep.to_lowercase(text)
         text = self.prep.handle_blank_spaces(text)
@@ -153,16 +166,16 @@ class Heterogeneous(Graph.Graph):
     
 
     # get nodes an its attributes
-    def __get_entities(self, corpus: list) -> list:  
+    def __get_entities(self, doc_words_list: list) -> list:  
         nodes = []
-        for i in range(0, len(corpus)-1):
-            node_doc =  ('D-' + str(i+1), {})
+        for d in doc_words_list:
+            node_doc =  ('D-' + str(d['doc']), {})
             nodes.append(node_doc)
-            doc_words = self.prep.word_tokenize(corpus[i]['doc'])
-            for word in doc_words:
+            for word in d['words']:
                 node_word = (str(word), {})
                 nodes.append(node_word)
-       
+        return nodes
+
 
    # get edges an its attributes
     def __get_relations(self, corpus_docs_list, doc_words_list, vocab) -> list:  
@@ -178,10 +191,10 @@ class Heterogeneous(Graph.Graph):
 
 
     # build nx-graph based of nodes and edges
-    def __build_graph(self, edges: list) -> networkx:
+    def __build_graph(self, nodes:list, edges: list) -> networkx:
         # pending validations
         graph = super().set_graph_type(self.graph_type)
-        #graph.add_nodes_from(nodes)
+        graph.add_nodes_from(nodes)
         graph.add_edges_from(edges)
         return graph
 
@@ -197,51 +210,60 @@ class Heterogeneous(Graph.Graph):
         try:
 
             #1. text preprocessing
-            logger.info("1. text preprocessing")
+            logger.debug("1. text preprocessing")
             corpus_docs_list = []
             doc_words_list = []
             len_corpus_docs = len(corpus_docs)
             vocab = set()
+            delayed_func = []
 
             if not self.load_preprocessing: 
-                logger.debug('Applying norm text')
                 if self.apply_prep == True:
-                    for i in range(len_corpus_docs):
-                        text_normalize, words_tokenize = self.__text_normalize(corpus_docs[i]['doc'])
-                        doc_words_list.append({'doc': i, 'words': words_tokenize})
-                        corpus_docs_list.append(text_normalize)
-                        vocab.update(set(words_tokenize))
-
-                        if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
-                            logger.debug("\t Iter %s out of %s", str(i+1), str(len_corpus_docs))
+                    logger.debug('\t Applying new norm text')
+                    if self.parallel_exec == True:
+                        for i in range(len_corpus_docs):
+                            delayed_func.append(self.utils.joblib_delayed(funct=self._text_normalize, params=corpus_docs[i]['doc']))
+                        parallel_text_normalize = self.utils.joblib_parallel(delayed_func, process_name='norm_text_hetero_graph')
+                        for i, t_norm in enumerate(parallel_text_normalize):
+                            doc_words_list.append({'doc': i+1, 'words': t_norm[1]})
+                            corpus_docs_list.append(t_norm[0])
+                            vocab.update(set(t_norm[1]))
+                    else:
+                        for i in range(len_corpus_docs):
+                            text_normalize, words_tokenize = self._text_normalize(corpus_docs[i]['doc'])
+                            doc_words_list.append({'doc': i+1, 'words': words_tokenize})
+                            corpus_docs_list.append(text_normalize)
+                            vocab.update(set(words_tokenize))
+                            if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
+                                logger.debug("\t Iter %s out of %s", str(i+1), str(len_corpus_docs))
+                            
                     vocab = list(vocab)
                     self.utils.save_data(data=corpus_docs_list, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
                     self.utils.save_data(data=vocab, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='vocab', compress=1)
                 else:
                     corpus_docs_list = corpus_docs
             else:
-                logger.debug('\t Loading norm text')
+                logger.debug('\t Load existing norm text')
                 corpus_docs_list = self.utils.load_data(file_name='corpus_normalized', path=configs.OUTPUT_DIR_HETERO_PATH)
                 vocab = self.utils.load_data(file_name='vocab', path=configs.OUTPUT_DIR_HETERO_PATH)
 
-            #2. build vocabulary
-            #logger.info("2. build vocabulary")
-            #doc_words_list, vocab = self.__build_vocab(corpus_docs)
 
-            #3. get node/entities
-            #logger.info("3. get node")
-            #nodes = self.__get_entities(corpus_docs_list)
+            #2. get node/entities
+            logger.debug("3. Get node/entities")
+            nodes = self.__get_entities(doc_words_list)
 
-            #4. get edges/relations
-            logger.info("2. get nodes/edges")
+            #3. get edges/relations
+            logger.debug("2. Get edges/relations")
             edges = self.__get_relations(corpus_docs_list, doc_words_list, vocab)
             
-            #5. build graph
-            logger.info("3. build graph")
-            graph = self.__build_graph(edges)
+            #4. build graph
+            logger.debug("3. Build graph")
+            graph = self.__build_graph(nodes, edges)
             output_dict['number_of_edges'] = graph.number_of_edges()
             output_dict['number_of_nodes'] = graph.number_of_nodes()
-            #10. graph_transformation
+
+            #5. graph_transformation
+            logger.debug("4. Tranform uutput graph")
             output_dict['graph'] = self.graph_trans.transform(self.output_format, graph)
         except Exception as e:
             logger.error('Error: %s', str(e))

@@ -8,31 +8,24 @@ import time
 from joblib import Parallel, delayed
 import warnings
 
-from text2graphapi.src.Utils import Utils
-from text2graphapi.src.Preprocessing import Preprocessing
-from text2graphapi.src.GraphTransformation import GraphTransformation
-from text2graphapi.src import Graph
-
 # Configs
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-'''# TEST API PYPI
+logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
 if TEST_API_FROM == 'PYPI':
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
     from text2graphapi.src.GraphTransformation import GraphTransformation
     from text2graphapi.src import Graph
-# TEST API LOCAL
 else:
     from src.Utils import Utils
     from src.Preprocessing import Preprocessing
     from src.GraphTransformation import GraphTransformation
-    from src import Graph'''
+    from src import Graph
     
 
 class Cooccurrence(Graph.Graph):
@@ -45,7 +38,15 @@ class Cooccurrence(Graph.Graph):
         :param bool apply_prep: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
-    def __init__(self, graph_type, output_format='', apply_preprocessing=True, window_size=1, parallel_exec=True, language='en', steps_preprocessing={}):
+    def __init__(self, 
+                graph_type, 
+                output_format='', 
+                apply_preprocessing=True, 
+                window_size=1,
+                parallel_exec=False, 
+                language='en', 
+                steps_preprocessing={}
+            ):
         """Constructor method
         """
         self.apply_prep = apply_preprocessing
@@ -67,12 +68,12 @@ class Cooccurrence(Graph.Graph):
             text = self.prep.handle_non_ascii(text)
             text = self.prep.handle_emoticons(text)
             text = self.prep.handle_html_tags(text)
+            text = self.prep.handle_negations(text)
+            text = self.prep.handle_contractions(text)
             text = self.prep.handle_stop_words(text)
             text = self.prep.to_lowercase(text)
-            #text = self.prep.handle_blank_spaces(text)
-
-        #preproc baseline: word_tokenize
-        #text = self.prep.word_tokenize(text)
+            text = self.prep.handle_blank_spaces(text)
+            
         return text
 
 
@@ -188,17 +189,17 @@ class Cooccurrence(Graph.Graph):
         logger.info("Number of Text Documents: %s", len(corpus_texts))
         corpus_output_graph, delayed_func = [], []
 
-        for input_text in corpus_texts:
-            logger.debug('--- Processing doc %s ', str(input_text['id'])) 
-            if self.parallel_exec == True: 
+        if self.parallel_exec == True: 
+            for input_text in corpus_texts:
+                logger.debug('--- Processing doc %s ', str(input_text['id'])) 
                 delayed_func.append(
                     self.utils.joblib_delayed(funct=self._transform_pipeline, params=input_text) 
                 )
-            else:
+            corpus_output_graph = self.utils.joblib_parallel(delayed_func, process_name='transform_cooocur_graph')
+        else:
+            for input_text in corpus_texts:
+                logger.debug('--- Processing doc %s ', str(input_text['id'])) 
                 corpus_output_graph.append(self._transform_pipeline(input_text))
-
-        if self.parallel_exec == True: 
-            corpus_output_graph = Parallel(n_jobs=-1)(delayed_func)
         
         logger.info("Done transformations")
         return corpus_output_graph

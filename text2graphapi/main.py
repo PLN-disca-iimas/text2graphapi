@@ -96,7 +96,7 @@ def text_to_cooccur_graph(corpus_docs):
             graph_type = 'DiGraph', 
             apply_preprocessing = True, 
             steps_preprocessing = {},
-            parallel_exec = False,
+            parallel_exec = True,
             window_size = 2, 
             language = 'en', #es, en
             output_format = 'networkx'
@@ -111,11 +111,11 @@ def text_to_hetero_graph(corpus_docs):
     hetero_graph = Heterogeneous(
         window_size = 20, 
         graph_type = 'Graph',
-        parallel_exec = False,
+        parallel_exec = True,
         apply_preprocessing = True, 
-        load_preprocessing = True, 
+        load_preprocessing = False, 
         steps_preprocessing = {},
-        language = 'es', #es, en,
+        language = 'en', #es, en,
         output_format = 'networkx',
     )
     # apply Heterogeneous transformation
@@ -171,7 +171,7 @@ def main():
         train = read_dataset(DATASET, file='pan22-authorship-verification-training.jsonl')
         train_truth = read_dataset(DATASET, file='pan22-authorship-verification-training-truth.jsonl')
         #corpus.extend(read_dataset(DATASET, file='test.jsonl'))
-        corpus_text_docs = handle_PAN_dataset(train, num_rows=-1)
+        corpus_text_docs = handle_PAN_dataset(train, num_rows=5)
 
     #print(len(corpus_text_docs), corpus_text_docs[0])
     

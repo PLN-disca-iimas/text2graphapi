@@ -22,7 +22,7 @@ RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 
 try:
     spacy.load('en_core_web_sm')
-    spacy.load('es_core_news_md')
+    spacy.load('es_core_news_sm')
     spacy.load('fr_core_news_sm')
     nltk.data.find('tokenizers/punkt')
     logger.info('Has already installed spacy models')
@@ -31,7 +31,7 @@ except OSError:
         "Downloading language model for the spaCy, this will only happen once")
     from spacy.cli import download
     download('en_core_web_sm')
-    download('es_core_news_md')
+    download('es_core_news_sm')
     download('fr_core_news_sm')
     nltk.download('punkt')
 
@@ -76,7 +76,7 @@ class Preprocessing(object):
         elif self.lang == 'es':
             stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'
             # Load Spanish tokenizer, tagger, parser and NER
-            self.nlp = spacy.load('es_core_news_md')
+            self.nlp = spacy.load('es_core_news_sd')
         elif self.lang == 'fr':
             stoword_path = RESOURCES_DIR + '/stopwords_french.txt'
             # Load Spanish tokenizer, tagger, parser and NER
@@ -216,3 +216,4 @@ class Preprocessing(object):
         """
         doc = self.nlp(text)
         return [(token, token.pos_) for token in doc]
+        #return nltk.pos_tag(text)

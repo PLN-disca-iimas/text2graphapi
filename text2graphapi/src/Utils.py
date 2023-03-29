@@ -21,10 +21,13 @@ class Utils(object):
         return delayed(funct)(params)
 
 
-    def joblib_parallel(self, delayed_funct, n_jobs=configs.DEFAULT_NUM_CPU_JOBLIB, backend='loky'):
+    def joblib_parallel(self, delayed_funct, process_name, n_jobs=configs.DEFAULT_NUM_CPU_JOBLIB, backend='loky', mmap_mode='c', max_nbytes=None):
+        logger.info('Parallel exec for %s, num cpus used: %s', process_name, configs.DEFAULT_NUM_CPU_JOBLIB)
         return Parallel(
             n_jobs=n_jobs,
-            backend=backend
+            backend=backend,
+            mmap_mode=mmap_mode,
+            max_nbytes=max_nbytes
         )(delayed_funct)
 
 
