@@ -6,6 +6,8 @@ text2graphapi/datasets/pan20/
 text2graphapi/datasets/pan22/
 text2graphapi/datasets/spanish_fake_news/
 text2graphapi/datasets/tass_emotion_detection/
+text2graphapi/output_test/
+text2graphapi/main_server.py
 build/
 dist/
 text2graphapi.egg-info/
