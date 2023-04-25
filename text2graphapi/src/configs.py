@@ -1,7 +1,6 @@
 import multiprocessing
 import os
 
-
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 RESOURCES_DIR_PATH = os.path.join(ROOT_DIR, 'src/resources')
 OUTPUT_DIR_NAME = 'output_text2graphapi'

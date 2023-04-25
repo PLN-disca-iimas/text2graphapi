@@ -7,6 +7,9 @@ import networkx as nx
 import logging
 from sklearn.datasets import fetch_20newsgroups
 import pandas as pd
+import glob
+from functools import reduce
+
 
 '''
     Main file to run testing for Library
@@ -20,17 +23,9 @@ logger.setLevel(logging.INFO)
 
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-DATASET = 'pan22' # posible values: pan14, pan15
 TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 PRINT_NUM_OUTPUT_GRAPHS = 5
-INPUT_CORPUS_TEST = {
-    'active': False,
-    'corpus_text_docs': [
-        #{'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
-        {'id': 1, 'doc': "bible answers organization distribution"},
-        {'id': 2, 'doc': "atheists agnostics organization"},
-    ]
-}
+
 
 
 # TEST API PYPI
@@ -51,53 +46,93 @@ def read_dataset(dataset, file):
     return docs
 
 
-def handle_spanish_fake_news_dataset(corpus_docs, num_rows=-1):
+def read_custom_dataset():
+    dataset_name = 'custom'
+    logger.info("*** Using dataset: %s", dataset_name)
+    corpus_text_docs = [
+        {'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
+        #{'id': 1, 'doc': "The 5 biggest countries by population in 2017 are China, India, USA, Indonesia, and Brazil."},
+        #{'id': 2, 'doc': "Box A contains 3 red and 5 white balls, while Box B contains 4 red and 2 blue balls."},
+    ]
+    return corpus_text_docs
+
+
+def read_spanish_fake_news_dataset():
+    dataset_name = 'spanish_fake_news'
+    logger.info("*** Using dataset: %s", dataset_name)
+    dataset_path = ROOT_DIR + '/text2graphapi/datasets/' + dataset_name
+    dataset_train = dataset_path + '/train.csv'
+    dataset_test = dataset_path + '/test.csv'
+    train_df = pd.read_csv(dataset_train)
+    test_df = pd.read_csv(dataset_test)
+    train_list = train_df.to_dict('records')
+    test_list = test_df.to_dict('records')
+    corpus_docs = []
+    corpus_text_docs = []
+    corpus_docs.extend(train_list)
+    corpus_docs.extend(test_list)
+    for d in corpus_docs[:]:
+        doc = {"id": d['id'], "doc": d['text']}
+        corpus_text_docs.append(doc)
+    return corpus_text_docs
+
+
+def read_20_newsgroups_dataset():
+    dataset_name = '20_newsgroups'
+    logger.info("*** Using dataset: %s", dataset_name)
+    newsgroups_dataset = fetch_20newsgroups() #subset='train', fetch from sci-kit learn
     id = 1
-    new_corpus_docs = []
-    for d in corpus_docs[:num_rows]:
+    corpus_text_docs = []
+    for d in newsgroups_dataset.data[:]:
         doc = {"id": id, "doc": d}
-        new_corpus_docs.append(doc)
+        corpus_text_docs.append(doc)
         id += 1
-    return new_corpus_docs
+    return corpus_text_docs
 
 
-def handle_20ng_dataset(corpus_docs, num_rows=-1):
+def read_tass_emotion_detection_dataset():
+    dataset_name = 'tass_emotion_detection'
+    logger.info("*** Using dataset: %s", dataset_name)
+    dataset_path = ROOT_DIR + '/text2graphapi/datasets/' + dataset_name
+    dataset = dataset_path + '/emotion.csv'
+    dataset_df = pd.read_csv(dataset, encoding= 'unicode_escape')
+    dataset_list = dataset_df.to_dict('records')
+    corpus_text_docs = []
     id = 1
-    new_corpus_docs = []
-    for d in corpus_docs[:num_rows]:
-        doc = {"id": id, "doc": d}
-        new_corpus_docs.append(doc)
+    for d in dataset_list[:]:
+        doc = {"id": id, "doc": d['texts']}
+        corpus_text_docs.append(doc)
         id += 1
-    return new_corpus_docs
+    return corpus_text_docs
 
 
-def handle_PAN_dataset(corpus_docs, num_rows=-1):
-    new_corpus_docs = []
-    docs_id = []
-    for line in corpus_docs[:num_rows]:
-        doc_text_1 = line['pair'][0]
-        doc_text_2 = line['pair'][1]
-        doc_id_1 = line['id'] + '_1'
-        doc_id_2 = line['id'] + '_2'
-        if (len(doc_text_1) == 0 or len(doc_text_2) == 0) or (line['id'] in docs_id):
-            continue
-        docs = [
-            {"id": doc_id_1, "doc": doc_text_1},
-            {"id": doc_id_2, "doc": doc_text_2}
-        ]
-        new_corpus_docs.extend(docs)
-        docs_id.append(line['id'])
-    return new_corpus_docs
+def read_pan_dataset(dataset_name, file_name):
+    logger.info("*** Using dataset: %s", dataset_name)
+    dataset_dir = ROOT_DIR + '/text2graphapi/datasets/' + dataset_name
+    files = glob.glob(f"{dataset_dir}/*.jsonl")
+    df_files = [pd.read_json(path_or_buf=f, lines=True) for f in files]
+    df_reduced = reduce(lambda df1,df2: pd.merge(df1,df2,how='left',on='id'), df_files)
+    return handle_PAN_dataset(df_reduced)
+
+
+def handle_PAN_dataset(corpus_df, num_rows=-1):
+    corpus_df.drop_duplicates(subset="pair", keep='first', inplace=True)
+    pairs_list = pd.Series([x for _list in pd.Series(corpus_df['pair']) for x in _list])    
+    pairs_list = pairs_list.value_counts().index.tolist()
+    text_list = []
+    for i, p_list in enumerate(pairs_list):
+        text_list.append({"id": i, "doc": p_list})
+    return text_list
 
 
 def text_to_cooccur_graph(corpus_docs):
     # create co_occur object
     co_occur = Cooccurrence(
-            graph_type = 'DiGraph', 
+            graph_type = 'Graph', 
             apply_preprocessing = True, 
             steps_preprocessing = {},
-            parallel_exec = True,
-            window_size = 2, 
+            parallel_exec = False,
+            window_size = 3, 
             language = 'en', #es, en
             output_format = 'networkx'
         )
@@ -111,7 +146,7 @@ def text_to_hetero_graph(corpus_docs):
     hetero_graph = Heterogeneous(
         window_size = 20, 
         graph_type = 'Graph',
-        parallel_exec = True,
+        parallel_exec = False,
         apply_preprocessing = True, 
         load_preprocessing = False, 
         steps_preprocessing = {},
@@ -123,70 +158,46 @@ def text_to_hetero_graph(corpus_docs):
     return corpus_hetero_graph
 
 
-def main():
-    # read dataset
-
-    '''DATASET = 'tass_emotion_detection'
-    dataset_path = ROOT_DIR + '/text2graphapi/datasets/' + DATASET
-    dataset = dataset_path + '/emotion.csv'
-    dataset_df = pd.read_csv(dataset, encoding= 'unicode_escape')
-    dataset_list = dataset_df.to_dict('records')
-    corpus_text_docs = []
-    id = 1
-    for d in dataset_list[:]:
-        doc = {"id": id, "doc": d['texts']}
-        corpus_text_docs.append(doc)
-        id += 1'''
-
-
-    '''DATASET = 'spanish_fake_news'
-    dataset_path = ROOT_DIR + '/text2graphapi/datasets/' + DATASET
-    dataset_train = dataset_path + '/train.csv'
-    dataset_test = dataset_path + '/test.csv'
-    
-    train_df = pd.read_csv(dataset_train)
-    test_df = pd.read_csv(dataset_test)
-    train_list = train_df.to_dict('records')
-    test_list = test_df.to_dict('records')
-    corpus_docs = []
-    corpus_text_docs = []
-    corpus_docs.extend(train_list)
-    corpus_docs.extend(test_list)
-    for d in corpus_docs[:]:
-        doc = {"id": d['id'], "doc": d['text']}
-        corpus_text_docs.append(doc)'''
-    
-
-    '''DATASET = '20_newsgroups'
-    newsgroups_dataset = fetch_20newsgroups() #subset='train'
-    corpus_text_docs = handle_20ng_dataset(newsgroups_dataset.data, num_rows=-1)   
-    print(len(corpus_text_docs), corpus_text_docs[0])''' 
-
-
-    if INPUT_CORPUS_TEST['active'] == True:
-        logger.info("*** Reading dataset: INPUT_CORPUS_TEST")
-        corpus_text_docs = INPUT_CORPUS_TEST['corpus_text_docs']
+def main(dataset, graph_type, cut_dataset=-1):
+    # read dataset selected
+    corpus_text_docs = None
+    if dataset == 'tass_emotion_detection':
+        corpus_text_docs = read_tass_emotion_detection_dataset()
+    elif dataset == 'spanish_fake_news':
+        corpus_text_docs = read_spanish_fake_news_dataset()
+    elif dataset == '20_newsgroups':
+        corpus_text_docs = read_20_newsgroups_dataset()
+    elif dataset == 'pan_14':
+        corpus_text_docs = read_pan_dataset(dataset_name='pan14', file_name='train.jsonl')
+    elif dataset == 'pan_15':
+        corpus_text_docs = read_pan_dataset(dataset_name='pan15', file_name='train.jsonl')
+    elif dataset == 'pan_20':
+        corpus_text_docs = read_pan_dataset(dataset_name='pan20', file_name='train_small.jsonl')
+    elif dataset == 'pan_22':
+        corpus_text_docs = read_pan_dataset(dataset_name='pan22', file_name='pan22-authorship-verification-training.jsonl')
+    elif dataset == 'pan_23':
+        corpus_text_docs = read_pan_dataset(dataset_name='pan23', file_name='pairs.jsonl')
     else:
-        logger.info("*** Reading dataset: %s", DATASET)
-        train = read_dataset(DATASET, file='pan22-authorship-verification-training.jsonl')
-        train_truth = read_dataset(DATASET, file='pan22-authorship-verification-training-truth.jsonl')
-        #corpus.extend(read_dataset(DATASET, file='test.jsonl'))
-        corpus_text_docs = handle_PAN_dataset(train, num_rows=5)
-
-    #print(len(corpus_text_docs), corpus_text_docs[0])
+        corpus_text_docs = read_custom_dataset()
     
-    # apply tranformations
+    # cut dataset
+    corpus_text_docs = corpus_text_docs[:cut_dataset]
+    
+    
+    # set graph_type selcted & apply tranformations
     logger.info("*** Call API tranformation from: %s", TEST_API_FROM)
     start_time = time.time() # time init
     # expected input  ex: [{"id": 1, "doc": "text_data"}, ...]
-    #corpus_graph_docs = text_to_cooccur_graph(corpus_text_docs) 
-    corpus_graph_docs = text_to_hetero_graph(corpus_text_docs) 
+    corpus_graph_docs = None
+    if graph_type == 'Cooccurrence':
+        corpus_graph_docs = text_to_cooccur_graph(corpus_text_docs) 
+    if graph_type == 'Heterogeneous':
+        corpus_graph_docs = text_to_hetero_graph(corpus_text_docs) 
     # expected output ex: [{"id": 1, "doc_graph": "adj_matrix", 'number_of_edges': 123, 'number_of_nodes': 321 'status': 'success'}, ...]
     end_time = (time.time() - start_time)
    
     # metrics
     logger.info("*** Results - Metrics: ")
-    logger.info("Dataset: %s ", DATASET)
     logger.info('Num_Text_Docs: %i', len(corpus_text_docs))
     logger.info('Num_Graph_Docs: %i', len(corpus_graph_docs))
     logger.info("TOTAL TIME:  %s seconds" % end_time)
@@ -198,5 +209,9 @@ def main():
         #print(graph['graph'].nodes)
         #print(graph['graph'].edges)
 
+
 if __name__ == '__main__':
-    main()
+    # datasets options  : tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
+    # graph_type options: Cooccurrence, Heterogeneous
+
+    main(dataset='pan_23', graph_type='Heterogeneous', cut_dataset=-1)

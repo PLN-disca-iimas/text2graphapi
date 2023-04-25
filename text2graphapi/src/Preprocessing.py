@@ -10,6 +10,10 @@ from emot.emo_unicode import UNICODE_EMOJI, UNICODE_EMOJI_ALIAS, EMOTICONS_EMO
 from flashtext import KeywordProcessor
 import spacy
 import logging
+from nltk.corpus import stopwords
+from spacy.cli import download
+from spacy.language import Language
+
 
 # Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -21,21 +25,10 @@ ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 
 try:
-    spacy.load('en_core_web_sm')
-    spacy.load('es_core_news_sm')
-    spacy.load('fr_core_news_sm')
     nltk.data.find('tokenizers/punkt')
-    logger.info('Has already installed spacy models')
 except OSError:
-    logger.info(
-        "Downloading language model for the spaCy, this will only happen once")
-    from spacy.cli import download
-    download('en_core_web_sm')
-    download('es_core_news_sm')
-    download('fr_core_news_sm')
     nltk.download('punkt')
-
-
+    
 
 class Preprocessing(object):
     """Text parser for the preprocessing.
@@ -54,38 +47,52 @@ class Preprocessing(object):
     """
 
     def __init__(self, lang='en', steps_preprocessing={}):
-        # , pos_tagger=nltk.pos_tag
-        # self.pos_tagger = pos_tagger
-        stopwords = []
         self.lang = lang
         self.param_prepro = steps_preprocessing
-        self.methods_preprocessing = {'to_lowercase': self.to_lowercase,
-                                      'handle_negations': self.handle_negations,
-                                      'handle_contractions': self.handle_contractions,
-                                      'handle_stop_words': self.handle_stop_words,
-                                      'handle_html_tags': self.handle_html_tags,
-                                      'handle_emoticons': self.handle_emoticons,
-                                      'handle_non_ascii': self.handle_non_ascii,
-                                      'handle_blank_spaces': self.handle_blank_spaces}
+        self.methods_preprocessing = {
+            'handle_blank_spaces': self.handle_blank_spaces,
+            'handle_non_ascii': self.handle_non_ascii,
+            'handle_emoticons': self.handle_emoticons,
+            'handle_html_tags': self.handle_html_tags,
+            'handle_negations': self.handle_negations,
+            'handle_contractions': self.handle_contractions,
+            'handle_stop_words': self.handle_stop_words,
+            'to_lowercase': self.to_lowercase,
+            'handle_blank_spaces': self.handle_blank_spaces
+        }
 
-        # Guardamos las stopwords correspondientes
-        if self.lang == 'en':
-            stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
-            # Load English tokenizer, tagger, parser and NER
-            self.nlp = spacy.load("en_core_web_sm")
-        elif self.lang == 'es':
+        # Load Spacy model: tokenizer, tagger            
+        if self.lang == 'es':
             stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'
-            # Load Spanish tokenizer, tagger, parser and NER
-            self.nlp = spacy.load('es_core_news_sd')
+            self.nlp = self.load_spacy_model("es_core_news_sd")
         elif self.lang == 'fr':
             stoword_path = RESOURCES_DIR + '/stopwords_french.txt'
-            # Load Spanish tokenizer, tagger, parser and NER
-            self.nlp = spacy.load('fr_core_news_sm')
+            self.nlp = self.load_spacy_model("fr_core_news_sm")
+        else: #default self.lang == 'en'
+            stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
+            #self.nlp = spacy.load("en_core_web_sm")
+            self.nlp = self.load_spacy_model("en_core_web_sm")
+        self.nlp.max_length = 10000000 
 
+
+        stopwords = []
         for line in codecs.open(stoword_path, encoding="utf-8"):
             # Remove black space if they exist
             stopwords.append(line.strip())
         self.stopwords = dict.fromkeys(stopwords, True)
+        #self.stopwords = set(stopwords.words('english'))
+
+
+    def load_spacy_model(self, spacy_model):
+        exclude_modules = ["ner", "parser", "lemmatizer", "textcat"]
+        try:
+            spacy.load(spacy_model, exclude=exclude_modules)
+            logger.info('Has already installed spacy model %s', spacy_model)
+        except OSError:
+            logger.info("Downloading %s model for the spaCy, this will only happen once", spacy_model)
+            download('en_core_web_sm')
+        finally:
+            return spacy.load(spacy_model, exclude=exclude_modules)
 
 
     def prepocessing_pipeline(self, text):
@@ -93,12 +100,12 @@ class Preprocessing(object):
         if len(self.param_prepro) == 0:
             # To do all preprocessing
             for method in self.methods_preprocessing:
-                self.methods_preprocessing[method](text)
+                text = self.methods_preprocessing[method](text)
         else:
             for method in self.param_prepro:
                 if self.param_prepro[method]:
-                    self.methods_preprocessing[method](text)
-
+                    text = self.methods_preprocessing[method](text)
+        return text
 
     def handle_blank_spaces(self, text: str) -> str:
         """Remove blank spaces.
@@ -156,7 +163,8 @@ class Preprocessing(object):
         """
         tokens = self.word_tokenize(text)
         # Remove las stopwords
-        without_stopwords = [word for word in tokens if not self.stopwords.get(word.lower().strip(), False)]
+        #without_stopwords = [word for word in tokens if not self.stopwords.get(word.lower().strip(), False)]
+        without_stopwords = [word for word in tokens if not word.lower().strip() in self.stopwords]
         return " ".join(without_stopwords)
     
 
@@ -217,3 +225,33 @@ class Preprocessing(object):
         doc = self.nlp(text)
         return [(token, token.pos_) for token in doc]
         #return nltk.pos_tag(text)
+
+
+    @Language.component("stop_words_component")
+    def stop_words_component(doc):
+        # Do something to the doc here
+        for token in doc:
+            without_stopwords = [word for word in doc if not word.lower().strip() in self.stopwords]
+        return doc
+
+
+    def nlp_pipeline(self, docs: list):
+        # docs = (text_doc, {"doc_id": "value", ...})
+        
+       # self.nlp.add_pipe("stop_words_component", last=True)
+        doc_tuples = self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=2000)
+        return doc_tuples
+
+
+
+
+
+'''
+doc_tuples = []
+for doc in self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=2000):
+    # Do something with the doc here
+    print(doc, str(doc))
+    doc[0] = self.handle_stop_words(doc[0])
+    doc_tuples.append(doc)
+return doc_tuples
+'''

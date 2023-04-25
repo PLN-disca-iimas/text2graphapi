@@ -34,8 +34,8 @@ class Cooccurrence(Graph.Graph):
         :param str graph_type: graph type to generate, default=Graph (types: Graph, DiGraph, MultiGraph, MultiDiGraph)
         :param str output_format: output format to the graph default=networkx (formats: networkx, adj_matrix, adj_list, adj_pandas)
         :param int window_size: windows size for co-occurrence, default=1
-        :param int language: language for text prepocessing, default=en (lang: en, es)
-        :param bool apply_prep: flag to exec text prepocessing, default=true
+        :param int language: language for text prepocessing, default=en (lang: en, es, fr)
+        :param bool apply_preprocessing: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
     def __init__(self, 
@@ -62,6 +62,10 @@ class Cooccurrence(Graph.Graph):
 
     # normalize text
     def _text_normalize(self, text: str) -> list:
+        """This module generate a word-coocurrence graph from raw text 
+
+            :param str text: texto to normalize 
+        """
         if self.apply_prep == True:
             #self.prep.prepocessing_pipeline(text)
             text = self.prep.handle_blank_spaces(text)
@@ -155,38 +159,9 @@ class Cooccurrence(Graph.Graph):
         
         :return: list
         
-        Input Example
-
-        .. highlight:: python
-        .. code-block:: python
-            
-            corpus_texts = [
-                {  
-                    "id": 1, 
-                    "doc": "text_data"
-                }, ...
-            ]
-        
-        Output Example
-
-        .. highlight:: python
-        .. code-block:: python
-            
-            [
-                {
-                    "id": 1, 
-                    "doc_graph": adj_matrix, 
-                    'number_of_edges': 123, 
-                    'number_of_nodes': 321 
-                    'status': 'success'
-                }, ...
-            ]
-
-            
-
         """
         logger.info("Init transformations: Text to Co-Ocurrence Graph")
-        logger.info("Number of Text Documents: %s", len(corpus_texts))
+        logger.info("Transforming %s text documents...", len(corpus_texts))
         corpus_output_graph, delayed_func = [], []
 
         if self.parallel_exec == True: 

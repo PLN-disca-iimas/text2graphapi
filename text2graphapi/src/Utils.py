@@ -3,6 +3,8 @@ import joblib
 import os 
 import sys
 import logging
+import spacy
+import nltk
 
 from src import configs
 
