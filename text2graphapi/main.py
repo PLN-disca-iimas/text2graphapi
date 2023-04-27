@@ -23,7 +23,7 @@ logger.setLevel(logging.INFO)
 
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'PYPY' #posible values: LOCAL, PYPI
 PRINT_NUM_OUTPUT_GRAPHS = 5
 
 
@@ -31,6 +31,7 @@ PRINT_NUM_OUTPUT_GRAPHS = 5
 # TEST API PYPI
 if TEST_API_FROM == 'PYPY':
     from text2graphapi.src.Cooccurrence  import Cooccurrence
+    from text2graphapi.src.Heterogeneous  import Heterogeneous
 # TEST API LOCAL
 else:
     from src.Cooccurrence import Cooccurrence
@@ -214,4 +215,4 @@ if __name__ == '__main__':
     # datasets options  : tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
     # graph_type options: Cooccurrence, Heterogeneous
 
-    main(dataset='pan_23', graph_type='Heterogeneous', cut_dataset=-1)
+    main(dataset='pan_23', graph_type='Cooccurrence', cut_dataset=-1)
