@@ -23,7 +23,7 @@ logger.setLevel(logging.INFO)
 
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-TEST_API_FROM = 'PYPY' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
 PRINT_NUM_OUTPUT_GRAPHS = 5
 
 
@@ -52,8 +52,8 @@ def read_custom_dataset():
     logger.info("*** Using dataset: %s", dataset_name)
     corpus_text_docs = [
         {'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
-        #{'id': 1, 'doc': "The 5 biggest countries by population in 2017 are China, India, USA, Indonesia, and Brazil."},
-        #{'id': 2, 'doc': "Box A contains 3 red and 5 white balls, while Box B contains 4 red and 2 blue balls."},
+        {'id': 2, 'doc': "The 5 biggest countries by population in 2017 are China, India, USA, Indonesia, and Brazil."},
+        {'id': 3, 'doc': "Box A contains 3 red and 5 white balls, while Box B contains 4 red and 2 blue balls."},
     ]
     return corpus_text_docs
 
@@ -113,6 +113,7 @@ def read_pan_dataset(dataset_name, file_name):
     files = glob.glob(f"{dataset_dir}/*.jsonl")
     df_files = [pd.read_json(path_or_buf=f, lines=True) for f in files]
     df_reduced = reduce(lambda df1,df2: pd.merge(df1,df2,how='left',on='id'), df_files)
+    print(df_reduced.info())
     return handle_PAN_dataset(df_reduced)
 
 
@@ -130,7 +131,7 @@ def text_to_cooccur_graph(corpus_docs):
     # create co_occur object
     co_occur = Cooccurrence(
             graph_type = 'Graph', 
-            apply_preprocessing = True, 
+            apply_prep = True, 
             steps_preprocessing = {},
             parallel_exec = False,
             window_size = 3, 
@@ -148,10 +149,10 @@ def text_to_hetero_graph(corpus_docs):
         window_size = 20, 
         graph_type = 'Graph',
         parallel_exec = False,
-        apply_preprocessing = True, 
+        apply_prep = True, 
         load_preprocessing = False, 
         steps_preprocessing = {},
-        language = 'en', #es, en,
+        language = 'es', #es, en,
         output_format = 'networkx',
     )
     # apply Heterogeneous transformation
@@ -212,7 +213,7 @@ def main(dataset, graph_type, cut_dataset=-1):
 
 
 if __name__ == '__main__':
-    # datasets options  : tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
+    # datasets options  : default, tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
     # graph_type options: Cooccurrence, Heterogeneous
 
-    main(dataset='pan_23', graph_type='Cooccurrence', cut_dataset=-1)
+    main(dataset='default', graph_type='Cooccurrence', cut_dataset=10)

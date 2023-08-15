@@ -32,11 +32,11 @@ if TEST_API_FROM == 'PYPI':
     from text2graphapi.src import Graph
     from text2graphapi.src import configs
 else:
-    from src.Utils import Utils
-    from src.Preprocessing import Preprocessing
-    from src.GraphTransformation import GraphTransformation
-    from src import Graph
-    from src import configs
+    from text2graphapi.src.Utils import Utils
+    from text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.src import Graph
+    from text2graphapi.src import configs
 
 
 class Heterogeneous(Graph.Graph):
@@ -46,7 +46,7 @@ class Heterogeneous(Graph.Graph):
         :param str output_format: output format to the graph default=networkx (formats: networkx, adj_matrix, adj_list, adj_pandas)
         :param int window_size: windows size for pmi measure, default=20
         :param int language: language for text prepocessing, default=en (lang: en, es)
-        :param bool apply_preprocessing: flag to exec text prepocessing, default=true
+        :param bool apply_prep: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
     def __init__(self, 
@@ -55,13 +55,13 @@ class Heterogeneous(Graph.Graph):
                 window_size=20, 
                 parallel_exec=False, 
                 language='en', 
-                apply_preprocessing=True, 
+                apply_prep=True, 
                 steps_preprocessing={},
                 load_preprocessing=False
             ):
         """Constructor method
         """
-        self.apply_prep = apply_preprocessing
+        self.apply_prep = apply_prep
         self.parallel_exec = parallel_exec
         self.window_size = window_size
         self.prep = Preprocessing(lang=language, steps_preprocessing=steps_preprocessing)

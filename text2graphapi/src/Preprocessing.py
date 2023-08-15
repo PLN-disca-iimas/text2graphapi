@@ -26,7 +26,7 @@ RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 
 try:
     nltk.data.find('tokenizers/punkt')
-except OSError:
+except LookupError:
     nltk.download('punkt')
     
 
@@ -62,9 +62,9 @@ class Preprocessing(object):
         }
 
         # Load Spacy model: tokenizer, tagger            
-        if self.lang == 'es':
+        if self.lang == 'sp':
             stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'
-            self.nlp = self.load_spacy_model("es_core_news_sd")
+            self.nlp = self.load_spacy_model("es_core_news_sm")
         elif self.lang == 'fr':
             stoword_path = RESOURCES_DIR + '/stopwords_french.txt'
             self.nlp = self.load_spacy_model("fr_core_news_sm")
@@ -90,7 +90,7 @@ class Preprocessing(object):
             logger.info('Has already installed spacy model %s', spacy_model)
         except OSError:
             logger.info("Downloading %s model for the spaCy, this will only happen once", spacy_model)
-            download('en_core_web_sm')
+            download(spacy_model)
         finally:
             return spacy.load(spacy_model, exclude=exclude_modules)
 

@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-if TEST_API_FROM == 'PYPI':
+if TEST_API_FROM == 'LOCAL':
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
     from text2graphapi.src.GraphTransformation import GraphTransformation
     from text2graphapi.src import Graph
 else:
-    from src.Utils import Utils
-    from src.Preprocessing import Preprocessing
-    from src.GraphTransformation import GraphTransformation
-    from src import Graph
+    from text2graphapi.src.Utils import Utils
+    from text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.src import Graph
     
 
 class Cooccurrence(Graph.Graph):
@@ -35,13 +35,13 @@ class Cooccurrence(Graph.Graph):
         :param str output_format: output format to the graph default=networkx (formats: networkx, adj_matrix, adj_list, adj_pandas)
         :param int window_size: windows size for co-occurrence, default=1
         :param int language: language for text prepocessing, default=en (lang: en, es, fr)
-        :param bool apply_preprocessing: flag to exec text prepocessing, default=true
+        :param bool apply_prep: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
     def __init__(self, 
                 graph_type, 
                 output_format='', 
-                apply_preprocessing=True, 
+                apply_prep=True, 
                 window_size=1,
                 parallel_exec=False, 
                 language='en', 
@@ -49,7 +49,7 @@ class Cooccurrence(Graph.Graph):
             ):
         """Constructor method
         """
-        self.apply_prep = apply_preprocessing
+        self.apply_prep = apply_prep
         self.parallel_exec = parallel_exec
         self.window_size = window_size
         self.prep = Preprocessing(lang=language, steps_preprocessing=steps_preprocessing)
