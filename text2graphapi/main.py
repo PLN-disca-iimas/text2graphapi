@@ -11,7 +11,7 @@ import glob
 from functools import reduce
 
 
-'''
+''' 
     Main file to run testing for Library
 '''
 
@@ -23,13 +23,12 @@ logger.setLevel(logging.INFO)
 
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 PRINT_NUM_OUTPUT_GRAPHS = 5
 
 
-
 # TEST API PYPI
-if TEST_API_FROM == 'PYPY':
+if TEST_API_FROM == 'PYPI':
     from text2graphapi.src.Cooccurrence  import Cooccurrence
     from text2graphapi.src.Heterogeneous  import Heterogeneous
 # TEST API LOCAL
@@ -135,7 +134,7 @@ def text_to_cooccur_graph(corpus_docs):
             steps_preprocessing = {},
             parallel_exec = False,
             window_size = 3, 
-            language = 'en', #es, en
+            language = 'en', #spanish (sp), english (en), french (fr)
             output_format = 'networkx'
         )
     # apply co_occur trnaformation
@@ -152,7 +151,7 @@ def text_to_hetero_graph(corpus_docs):
         apply_prep = True, 
         load_preprocessing = False, 
         steps_preprocessing = {},
-        language = 'es', #es, en,
+        language = 'sp', #spanish (sp), english (en), french (fr)
         output_format = 'networkx',
     )
     # apply Heterogeneous transformation
@@ -216,4 +215,4 @@ if __name__ == '__main__':
     # datasets options  : default, tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
     # graph_type options: Cooccurrence, Heterogeneous
 
-    main(dataset='default', graph_type='Cooccurrence', cut_dataset=10)
+    main(dataset='20_newsgroups', graph_type='Heterogeneous', cut_dataset=10)

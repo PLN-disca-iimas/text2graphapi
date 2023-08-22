@@ -25,18 +25,11 @@ logger.setLevel(logging.INFO)
 
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-if TEST_API_FROM == 'PYPI':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    from text2graphapi.src import configs
-else:
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    from text2graphapi.src import configs
+from text2graphapi.src.Utils import Utils
+from text2graphapi.src.Preprocessing import Preprocessing
+from text2graphapi.src.GraphTransformation import GraphTransformation
+from text2graphapi.src import Graph
+from text2graphapi.src import configs
 
 
 class Heterogeneous(Graph.Graph):

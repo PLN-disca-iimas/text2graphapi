@@ -1,6 +1,6 @@
 import os
 import re
-import sys
+import sys 
 import emoji
 import nltk
 import string
@@ -97,15 +97,14 @@ class Preprocessing(object):
 
     def prepocessing_pipeline(self, text):
         logger.debug('Aplying Text Preprocessing')
+        # Do all preprocessing steps
         if len(self.param_prepro) == 0:
-            # To do all preprocessing
-            for method in self.methods_preprocessing:
-                text = self.methods_preprocessing[method](text)
+            ...
+        # Do only specified preprocessing steps
         else:
-            for method in self.param_prepro:
-                if self.param_prepro[method]:
-                    text = self.methods_preprocessing[method](text)
+            ...
         return text
+
 
     def handle_blank_spaces(self, text: str) -> str:
         """Remove blank spaces.
