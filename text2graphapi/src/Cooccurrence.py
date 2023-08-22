@@ -68,6 +68,7 @@ class Cooccurrence(Graph.Graph):
         """
         if self.apply_prep == True:
             #self.prep.prepocessing_pipeline(text)
+            
             text = self.prep.handle_blank_spaces(text)
             text = self.prep.handle_non_ascii(text)
             text = self.prep.handle_emoticons(text)
