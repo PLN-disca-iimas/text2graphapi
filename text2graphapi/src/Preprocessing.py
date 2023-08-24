@@ -60,7 +60,7 @@ class Preprocessing(object):
             'to_lowercase': self.to_lowercase,
             'handle_blank_spaces': self.handle_blank_spaces
         }
-
+        
         # Load Spacy model: tokenizer, tagger            
         if self.lang == 'sp':
             stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'

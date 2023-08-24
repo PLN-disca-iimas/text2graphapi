@@ -10,3 +10,4 @@ OUTPUT_DIR_COOCCUR_PATH = os.path.join(OUTPUT_DIR_PATH, 'coocurrence')
 
 DEFAULT_NUM_CPU_JOBLIB = multiprocessing.cpu_count() // 2
 NUM_PRINT_ITER = 1000
+ENV_EXECUTION = 'LOCAL'

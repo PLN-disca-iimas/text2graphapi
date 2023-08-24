@@ -9,24 +9,27 @@ from joblib import Parallel, delayed
 import warnings
 
 # Configs
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-if TEST_API_FROM == 'LOCAL':
+if TEST_API_FROM == 'PYPI':
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
     from text2graphapi.src.GraphTransformation import GraphTransformation
     from text2graphapi.src import Graph
+    from text2graphapi.src import configs
 else:
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    
+    from src.Utils import Utils
+    from src.Preprocessing import Preprocessing
+    from src.GraphTransformation import GraphTransformation
+    from src import Graph
+    from src import configs
+
+
 
 class Cooccurrence(Graph.Graph):
     """This module generate a word-coocurrence graph from raw text 
@@ -68,7 +71,6 @@ class Cooccurrence(Graph.Graph):
         """
         if self.apply_prep == True:
             #self.prep.prepocessing_pipeline(text)
-            
             text = self.prep.handle_blank_spaces(text)
             text = self.prep.handle_non_ascii(text)
             text = self.prep.handle_emoticons(text)

@@ -19,7 +19,7 @@ from functools import reduce
 # *** Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -131,7 +131,15 @@ def text_to_cooccur_graph(corpus_docs):
     co_occur = Cooccurrence(
             graph_type = 'Graph', 
             apply_prep = True, 
-            steps_preprocessing = {},
+            steps_preprocessing = {
+                "handle_blank_spaces": True,
+                "handle_non_ascii": False,
+                "handle_html_tags": True,
+                "handle_negations": True,
+                "handle_contractions": False,
+                "handle_stop_words": True,
+                "to_lowercase": True
+            },
             parallel_exec = False,
             window_size = 3, 
             language = 'en', #spanish (sp), english (en), french (fr)
@@ -215,4 +223,4 @@ if __name__ == '__main__':
     # datasets options  : default, tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
     # graph_type options: Cooccurrence, Heterogeneous
 
-    main(dataset='20_newsgroups', graph_type='Heterogeneous', cut_dataset=10)
+    main(dataset='20_newsgroups', graph_type='Cooccurrence', cut_dataset=10)
