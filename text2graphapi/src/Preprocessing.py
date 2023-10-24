@@ -60,7 +60,7 @@ class Preprocessing(object):
             'to_lowercase': self.to_lowercase,
             'handle_blank_spaces': self.handle_blank_spaces
         }
-        
+
         # Load Spacy model: tokenizer, tagger            
         if self.lang == 'sp':
             stoword_path = RESOURCES_DIR + '/stopwords_spanish.txt'
@@ -70,7 +70,6 @@ class Preprocessing(object):
             self.nlp = self.load_spacy_model("fr_core_news_sm")
         else: #default self.lang == 'en'
             stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
-            #self.nlp = spacy.load("en_core_web_sm")
             self.nlp = self.load_spacy_model("en_core_web_sm")
         self.nlp.max_length = 10000000 
 
@@ -84,7 +83,7 @@ class Preprocessing(object):
 
 
     def load_spacy_model(self, spacy_model):
-        exclude_modules = ["ner", "parser", "lemmatizer", "textcat"]
+        exclude_modules = ["ner", "textcat"]
         try:
             spacy.load(spacy_model, exclude=exclude_modules)
             logger.info('Has already installed spacy model %s', spacy_model)
@@ -97,12 +96,15 @@ class Preprocessing(object):
 
     def prepocessing_pipeline(self, text):
         logger.debug('Aplying Text Preprocessing')
-        # Do all preprocessing steps
         if len(self.param_prepro) == 0:
-            ...
-        # Do only specified preprocessing steps
+            # To do all preprocessing
+            for method in self.methods_preprocessing:
+                text = self.methods_preprocessing[method](text)
         else:
-            ...
+            for method in self.param_prepro:
+                if self.param_prepro[method]:
+                    text = self.methods_preprocessing[method](text)
+            text = self.handle_blank_spaces(text)
         return text
 
 
@@ -225,7 +227,11 @@ class Preprocessing(object):
         return [(token, token.pos_) for token in doc]
         #return nltk.pos_tag(text)
 
+    # get multilevel lang features from text documents (lexical, morpholocial, syntactic)
+    def get_multilevel_lang_features(doc: str) -> list:
+        ...
 
+# TESTING...
     @Language.component("stop_words_component")
     def stop_words_component(doc):
         # Do something to the doc here
@@ -236,12 +242,9 @@ class Preprocessing(object):
 
     def nlp_pipeline(self, docs: list):
         # docs = (text_doc, {"doc_id": "value", ...})
-        
-       # self.nlp.add_pipe("stop_words_component", last=True)
+        # self.nlp.add_pipe("stop_words_component", last=True)
         doc_tuples = self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=2000)
         return doc_tuples
-
-
 
 
 

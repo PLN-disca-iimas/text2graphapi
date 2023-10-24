@@ -9,7 +9,8 @@ from sklearn.datasets import fetch_20newsgroups
 import pandas as pd
 import glob
 from functools import reduce
-
+ 
+ 
 
 ''' 
     Main file to run testing for Library
@@ -35,6 +36,7 @@ if TEST_API_FROM == 'PYPI':
 else:
     from src.Cooccurrence import Cooccurrence
     from src.Heterogeneous import Heterogeneous
+    from src.IntegratedSyntacticGraph import ISG
 
 
 def read_dataset(dataset, file):
@@ -133,10 +135,11 @@ def text_to_cooccur_graph(corpus_docs):
             apply_prep = True, 
             steps_preprocessing = {
                 "handle_blank_spaces": True,
-                "handle_non_ascii": False,
+                "handle_non_ascii": True,
+                "handle_emoticons": True,
                 "handle_html_tags": True,
                 "handle_negations": True,
-                "handle_contractions": False,
+                "handle_contractions": True,
                 "handle_stop_words": True,
                 "to_lowercase": True
             },
@@ -221,6 +224,6 @@ def main(dataset, graph_type, cut_dataset=-1):
 
 if __name__ == '__main__':
     # datasets options  : default, tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
-    # graph_type options: Cooccurrence, Heterogeneous
+    # graph_type options: Cooccurrence, Heterogeneous, ISG
 
-    main(dataset='20_newsgroups', graph_type='Cooccurrence', cut_dataset=10)
+    main(dataset='default', graph_type='Cooccurrence', cut_dataset=10)
