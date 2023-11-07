@@ -66,29 +66,57 @@ class ISG(Graph.Graph):
 
     # get nodes an its attributes
     def _get_entities(self, text_doc: list) -> list:  
-        nodes = []
-        # code here, node structure: (word, {'node_attr': value})
+        nodes = [('ROOT_0', {'pos_tag': 'ROOT_0'})]
+        for d in text_doc:
+            node = (
+            f"{d['token']}_{d['token_pos']}",
+                {'pos_tag': d['token_pos']}
+            )
+            nodes.append(node)
         return nodes
 
     # get edges an its attributes
     def _get_relations(self, text_doc: list) -> list:
-        edges = []
         # code here, edge structure: (word_i, word_j, {'edge_attr': value})
+        edges = []
+        for d in text_doc:
+            edge_attr = {'gramm_relation': d['token_dependency']}
+            if d['is_root_token'] == True:
+                edge = (
+                d['token'] + '_' + d['token_pos'],
+                'ROOT_0',
+                edge_attr
+                )
+            else:
+                edge = (
+                f"{d['token_head']}_{d['token_head_pos']}",
+                f"{d['token']}_{d['token_pos']}",
+                edge_attr
+                )
+            edges.append(edge)
         return edges
     
     # build nx-graph based of nodes and edges
     def _build_graph(self, nodes: list, edges: list) -> networkx:
-        ...
+        graph = nx.DiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        return graph
         # code here
     
     # get syntactic frequencies & Edge frequencies
-    def _get_frequency_weight(graph: nx.DiGraph):
+    def _get_frequency_weight(self, graph: nx.DiGraph):
         ...
         # code here
         
     # merge all graph to obtain the final ISG
-    def _build_ISG_graph(graphs: list) -> networkx:
-        ...
+    def _build_ISG_graph(self, graphs: list) -> networkx:
+        int_synt_graph = nx.DiGraph()
+        for graph in graphs:
+            int_synt_graph = nx.compose(int_synt_graph, graph)
+        # self._get_frequency_weight(int_synt_graph)
+
+        return int_synt_graph
         # 1. Compose/Merge all networkx graph
         # 2. Get syntactic frequencies & Edge frequencies
         # 3. Assign weight to edges
@@ -96,7 +124,7 @@ class ISG(Graph.Graph):
     def _transform_pipeline(self, text_instance: list) -> list:
         try:
             #1. text preprocessing
-            prep_text = self._text_normalize(text_instance)
+            prep_text = self._text_normalize(text_instance['doc'])
             #2. get multilevel lang features from text documents (lexical, morpholocial, syntactic)
             multi_lang_feat_doc = self.prep.get_multilevel_lang_features(prep_text)
             #3. get_entities
@@ -141,4 +169,5 @@ class ISG(Graph.Graph):
         logger.info("Done transformations")
         isg = self._build_ISG_graph(corpus_output_graph)
         return isg
+    
 
