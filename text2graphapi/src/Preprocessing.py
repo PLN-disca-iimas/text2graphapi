@@ -228,8 +228,32 @@ class Preprocessing(object):
         #return nltk.pos_tag(text)
 
     # get multilevel lang features from text documents (lexical, morpholocial, syntactic)
-    def get_multilevel_lang_features(doc: str) -> list:
-        ...
+    def get_multilevel_lang_features(self, text: str) -> list:
+        
+        """Get multilevel lang features from text documents (lexical, morpholocial, syntactic).
+
+        :params str text: Text for preprocesesing.
+        :return str: Text with multilevel lang features.
+        """
+        doc = self.nlp(text)
+        doc_tokens = []
+        for token in doc:
+            ### IMPORTANTE, solución temporal ###
+            if token.pos_ == 'PUNCT':
+                continue
+            token_info = {
+                'token': token.text,
+                'token_lemma': token.lemma_,
+                'token_pos': token.pos_,
+                'token_dependency': token.dep_,
+                'token_head': token.head,
+                'token_head_pos': token.head.pos_,
+                'is_root_token': False
+            }
+            if token.dep_ == 'ROOT':
+                token_info['is_root_token'] = True
+            doc_tokens.append(token_info)
+        return doc_tokens
 
 # TESTING...
     @Language.component("stop_words_component")

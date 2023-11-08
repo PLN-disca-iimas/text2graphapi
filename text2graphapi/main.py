@@ -52,9 +52,12 @@ def read_custom_dataset():
     dataset_name = 'custom'
     logger.info("*** Using dataset: %s", dataset_name)
     corpus_text_docs = [
-        {'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
-        {'id': 2, 'doc': "The 5 biggest countries by population in 2017 are China, India, USA, Indonesia, and Brazil."},
-        {'id': 3, 'doc': "Box A contains 3 red and 5 white balls, while Box B contains 4 red and 2 blue balls."},
+        {'id': 1, 'doc': 'I wonder if it has changed them back into real little children again'},
+        {'id': 2, 'doc': 'My, my, I was forgetting all about the children and the mysterious fern seed'},
+        {'id': 3, 'doc': 'Yes, here they come'}
+        # {'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
+        # {'id': 2, 'doc': "The 5 biggest countries by population in 2017 are China, India, USA, Indonesia, and Brazil."},
+        # {'id': 3, 'doc': "Box A contains 3 red and 5 white balls, while Box B contains 4 red and 2 blue balls."},
     ]
     return corpus_text_docs
 
@@ -152,6 +155,29 @@ def text_to_cooccur_graph(corpus_docs):
     corpus_cooccur_graphs = co_occur.transform(corpus_docs)
     return corpus_cooccur_graphs
 
+def text_to_isg_graph(corpus_docs):
+    # Create ISG object
+    isg = ISG(
+            graph_type = 'Graph', 
+            apply_prep = True, 
+            steps_preprocessing = {
+                "handle_blank_spaces": True,
+                "handle_non_ascii": False,
+                "handle_emoticons": True,
+                "handle_html_tags": True,
+                "handle_negations": True,
+                "handle_contractions": True,
+                "handle_stop_words": False,
+                "to_lowercase": True
+            },
+            parallel_exec = False,
+            language = 'en', #spanish (sp), english (en), french (fr)
+            output_format = 'networkx'
+        )
+    # apply ISG trnaformation
+    corpus_isg_graph = isg.transform(corpus_docs)
+    return corpus_isg_graph
+
 
 def text_to_hetero_graph(corpus_docs):
     # create co_occur object
@@ -206,6 +232,8 @@ def main(dataset, graph_type, cut_dataset=-1):
     if graph_type == 'Heterogeneous':
         corpus_graph_docs = text_to_hetero_graph(corpus_text_docs) 
     # expected output ex: [{"id": 1, "doc_graph": "adj_matrix", 'number_of_edges': 123, 'number_of_nodes': 321 'status': 'success'}, ...]
+    if graph_type == 'ISG':
+        corpus_graph_docs = text_to_isg_graph(corpus_text_docs)
     end_time = (time.time() - start_time)
    
     # metrics
@@ -226,4 +254,4 @@ if __name__ == '__main__':
     # datasets options  : default, tass_emotion_detection, spanish_fake_news, 20_newsgroups, pan_14, pan_15, pan_20, pan_22
     # graph_type options: Cooccurrence, Heterogeneous, ISG
 
-    main(dataset='default', graph_type='Cooccurrence', cut_dataset=10)
+    main(dataset='default', graph_type='ISG', cut_dataset=10)
