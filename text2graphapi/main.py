@@ -246,8 +246,8 @@ def main(dataset, graph_type, cut_dataset=-1):
     logger.info("*** Show Graphs Outputs: ")
     for graph in corpus_graph_docs[:PRINT_NUM_OUTPUT_GRAPHS]:
         print('\t', graph)
-        #print(graph['graph'].nodes)
-        #print(graph['graph'].edges)
+        print(graph['graph'].nodes)
+        print(graph['graph'].edges)
 
 
 if __name__ == '__main__':

@@ -83,8 +83,8 @@ class ISG(Graph.Graph):
             edge_attr = {'gramm_relation': d['token_dependency']}
             if d['is_root_token'] == True:
                 edge = (
-                d['token'] + '_' + d['token_pos'],
                 'ROOT_0',
+                d['token'] + '_' + d['token_pos'],
                 edge_attr
                 )
             else:
@@ -168,6 +168,13 @@ class ISG(Graph.Graph):
         
         logger.info("Done transformations")
         isg = self._build_ISG_graph(corpus_output_graph)
-        return isg
+        output_dict = {
+            'doc_id': 1, 
+            'graph': isg,
+            'number_of_edges': isg.number_of_edges(), 
+            'number_of_nodes': isg.number_of_nodes(), 
+            'status': 'success'
+        }
+        return [output_dict]
     
 
