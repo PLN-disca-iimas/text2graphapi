@@ -106,15 +106,19 @@ class ISG(Graph.Graph):
     
     # get syntactic frequencies & Edge frequencies
     def _get_frequency_weight(self, graph: nx.DiGraph):
-        ...
-        # code here
+        freq_dict = defaultdict(int)    
+        for edge in graph.edges(data=True):
+            freq_dict[edge[2]['gramm_relation']] += 1
+
+        for edge in graph.edges(data=True):
+            edge[2]['gramm_relation'] = f'{edge[2]["gramm_relation"]}_{freq_dict[edge[2]["gramm_relation"]]+graph.number_of_edges(edge[0], edge[1])}'
         
     # merge all graph to obtain the final ISG
     def _build_ISG_graph(self, graphs: list) -> networkx:
         int_synt_graph = nx.DiGraph()
         for graph in graphs:
             int_synt_graph = nx.compose(int_synt_graph, graph)
-        # self._get_frequency_weight(int_synt_graph)
+        self._get_frequency_weight(int_synt_graph)
 
         return int_synt_graph
         # 1. Compose/Merge all networkx graph
