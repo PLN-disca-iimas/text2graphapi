@@ -9,7 +9,7 @@ from sklearn.datasets import fetch_20newsgroups
 import pandas as pd
 import glob
 from functools import reduce
- 
+from src import configs
  
 
 ''' 
@@ -29,9 +29,10 @@ PRINT_NUM_OUTPUT_GRAPHS = 5
 
 
 # TEST API PYPI
-if TEST_API_FROM == 'PYPI':
+if configs.ENV_EXECUTION == 'PYPI':
     from text2graphapi.src.Cooccurrence  import Cooccurrence
     from text2graphapi.src.Heterogeneous  import Heterogeneous
+    from text2graphapi.src.IntegratedSyntacticGraph  import ISG
 # TEST API LOCAL
 else:
     from src.Cooccurrence import Cooccurrence

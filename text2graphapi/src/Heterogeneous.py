@@ -13,7 +13,7 @@ import collections
 import itertools
 import os
 import warnings
-
+from text2graphapi.src import configs
 
 # Logging configs
 TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
@@ -24,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
 # TEST API PYPI
-if TEST_API_FROM == 'PYPI':
+if configs.ENV_EXECUTION == 'PYPI':
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
     from text2graphapi.src.GraphTransformation import GraphTransformation

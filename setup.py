@@ -9,7 +9,7 @@ with open(path.join(ROOT, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="text2graphapi",
-    version="0.1.8",
+    version="0.1.9",
     description="Use this library to transform raw text into differents graph representations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
