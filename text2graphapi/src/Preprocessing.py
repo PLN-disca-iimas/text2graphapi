@@ -14,6 +14,8 @@ from nltk.corpus import stopwords
 from spacy.cli import download
 from spacy.language import Language
 
+from itertools import chain
+
 
 # Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -26,8 +28,13 @@ RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 
 try:
     nltk.data.find('tokenizers/punkt')
+    nltk.data.find('wordnet')
 except LookupError:
     nltk.download('punkt')
+    nltk.download('wordnet')
+finally:
+    from nltk.corpus import wordnet
+
     
 
 class Preprocessing(object):
@@ -229,26 +236,29 @@ class Preprocessing(object):
 
     # get multilevel lang features from text documents (lexical, morpholocial, syntactic)
     def get_multilevel_lang_features(self, text: str) -> list:
-        
-        """Get multilevel lang features from text documents (lexical, morpholocial, syntactic).
+        """Get multilevel lang features from text documents (lexical, morpholocial, syntactic and semantic level).
 
         :params str text: Text for preprocesesing.
         :return str: Text with multilevel lang features.
         """
         doc = self.nlp(text)
-        doc_tokens = []
+        doc_tokens = [] 
         for token in doc:
-            ### IMPORTANTE, solución temporal ###
-            if token.pos_ == 'PUNCT':
-                continue
+            synonyms_token = wordnet.synsets(str(token.lemma_))
+            synonyms_token_head = wordnet.synsets(str(token.head.lemma_))
+            synonyms_token_list = list(set(chain.from_iterable([word.lemma_names() for word in synonyms_token])))
+            synonyms_token_head_list = list(set(chain.from_iterable([word.lemma_names() for word in synonyms_token_head])))
             token_info = {
                 'token': token.text,
                 'token_lemma': token.lemma_,
                 'token_pos': token.pos_,
                 'token_dependency': token.dep_,
                 'token_head': token.head,
+                'token_head_lemma': token.head.lemma_,
                 'token_head_pos': token.head.pos_,
-                'is_root_token': False
+                'token_synonyms': synonyms_token_list[:5],
+                'token_head_synonyms': synonyms_token_head_list[:5],
+                'is_root_token': False,
             }
             if token.dep_ == 'ROOT':
                 token_info['is_root_token'] = True

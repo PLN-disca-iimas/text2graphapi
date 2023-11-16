@@ -7,31 +7,25 @@ import traceback
 import time
 from joblib import Parallel, delayed
 import warnings
-from text2graphapi.src import configs
+
+#from .configs import ENV_EXECUTION
 
 # Configs
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-if configs.ENV_EXECUTION == 'PYPI':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    from text2graphapi.src import configs
-else:
-    from src.Utils import Utils
-    from src.Preprocessing import Preprocessing
-    from src.GraphTransformation import GraphTransformation
-    from src import Graph
-    from src import configs
+#logger.debug('Import libraries/modules from: %s', ENV_EXECUTION)
+from .Utils import Utils
+from .Preprocessing import Preprocessing
+from .GraphTransformation import GraphTransformation
+from .Graph import Graph
+from .configs import ENV_EXECUTION
 
+logger.debug('Import libraries/modules from :%s', ENV_EXECUTION)
 
-class ISG(Graph.Graph):
+class ISG(Graph):
     """This module generate a word-coocurrence graph from raw text 
         
         :param str graph_type: graph type to generate, default=DiGraph (types: Graph, DiGraph, MultiGraph, MultiDiGraph)
@@ -69,11 +63,10 @@ class ISG(Graph.Graph):
     def _get_entities(self, text_doc: list) -> list:  
         nodes = [('ROOT_0', {'pos_tag': 'ROOT_0'})]
         for d in text_doc:
-            node = (
-            f"{d['token']}_{d['token_pos']}",
-                {'pos_tag': d['token_pos']}
-            )
-            nodes.append(node)
+            node = [(f"{d['token_lemma']}_{d['token_pos']}",{'pos_tag': d['token_pos']})]
+            if len(d['token_synonyms']) and True:
+                node += [(f"{d['token_synonyms'][0]}_{d['token_pos']}",{'pos_tag': d['token_pos']})]
+            nodes.extend(node)
         return nodes
 
     # get edges an its attributes
@@ -83,18 +76,16 @@ class ISG(Graph.Graph):
         for d in text_doc:
             edge_attr = {'gramm_relation': d['token_dependency']}
             if d['is_root_token'] == True:
-                edge = (
-                'ROOT_0',
-                d['token'] + '_' + d['token_pos'],
-                edge_attr
-                )
+                edge = [('ROOT_0', d['token_lemma'] + '_' + d['token_pos'], edge_attr)]
+                if len(d['token_synonyms']) and True:
+                    edge += [('ROOT_0', d['token_synonyms'][0] + '_' + d['token_pos'], edge_attr)]
+            
             else:
-                edge = (
-                f"{d['token_head']}_{d['token_head_pos']}",
-                f"{d['token']}_{d['token_pos']}",
-                edge_attr
-                )
-            edges.append(edge)
+                edge = [(f"{d['token_head_lemma']}_{d['token_head_pos']}", f"{d['token_lemma']}_{d['token_pos']}", edge_attr)]    
+                if len(d['token_head_synonyms']) and True:
+                    edge += [(f"{d['token_head_synonyms'][0]}_{d['token_head_pos']}", f"{d['token_lemma']}_{d['token_pos']}", edge_attr)]
+
+            edges.extend(edge)
         return edges
     
     # build nx-graph based of nodes and edges
@@ -107,20 +98,21 @@ class ISG(Graph.Graph):
     
     # get syntactic frequencies & Edge frequencies
     def _get_frequency_weight(self, graph: nx.DiGraph):
-        ...
-        # code here
+        freq_dict = defaultdict(int)    
+        for edge in graph.edges(data=True):
+            freq_dict[edge[2]['gramm_relation']] += 1
+
+        for edge in graph.edges(data=True):
+            edge[2]['gramm_relation'] = f'{edge[2]["gramm_relation"]}_{freq_dict[edge[2]["gramm_relation"]]+graph.number_of_edges(edge[0], edge[1])}'
         
     # merge all graph to obtain the final ISG
     def _build_ISG_graph(self, graphs: list) -> networkx:
         int_synt_graph = nx.DiGraph()
         for graph in graphs:
             int_synt_graph = nx.compose(int_synt_graph, graph)
-        # self._get_frequency_weight(int_synt_graph)
-
+        self._get_frequency_weight(int_synt_graph)
         return int_synt_graph
-        # 1. Compose/Merge all networkx graph
-        # 2. Get syntactic frequencies & Edge frequencies
-        # 3. Assign weight to edges
+    
 
     def _transform_pipeline(self, text_instance: list) -> list:
         try:
@@ -137,7 +129,7 @@ class ISG(Graph.Graph):
         except Exception as e:
             logger.error('Error: %s', str(e))
             logger.debug('Error Detail: %s', str(traceback.format_exc()))
-        finally:
+        else:
             return graph
         
 
@@ -167,8 +159,8 @@ class ISG(Graph.Graph):
                 logger.debug('--- Processing doc %s ', str(input_text['id'])) 
                 corpus_output_graph.append(self._transform_pipeline(input_text))
         
-        logger.info("Done transformations")
         isg = self._build_ISG_graph(corpus_output_graph)
+        logger.info("Done transformations")
         output_dict = {
             'doc_id': 1, 
             'graph': isg,

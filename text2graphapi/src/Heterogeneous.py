@@ -13,32 +13,24 @@ import collections
 import itertools
 import os
 import warnings
-from text2graphapi.src import configs
+
 
 # Logging configs
-TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-# TEST API PYPI
-if configs.ENV_EXECUTION == 'PYPI':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    from text2graphapi.src import configs
-else:
-    from src.Utils import Utils
-    from src.Preprocessing import Preprocessing
-    from src.GraphTransformation import GraphTransformation
-    from src import Graph
-    from src import configs
+from .Utils import Utils
+from .Preprocessing import Preprocessing
+from .GraphTransformation import GraphTransformation
+from .Graph import Graph
+from .configs import ENV_EXECUTION, NUM_PRINT_ITER, OUTPUT_DIR_HETERO_PATH
+
+logger.debug('Import libraries/modules from :%s', ENV_EXECUTION)
 
 
-class Heterogeneous(Graph.Graph):
+class Heterogeneous(Graph):
     """This module generate a Heterogeneous graph from raw text 
 
         :param str graph_type: graph type to generate, default=Graph (types: Graph, DiGraph, MultiGraph, MultiDiGraph)
@@ -98,7 +90,7 @@ class Heterogeneous(Graph.Graph):
             doc_words = doc['words']
             length = len(doc_words)
 
-            if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
+            if (i+1) == NUM_PRINT_ITER * ((i+1)//NUM_PRINT_ITER):
                 logger.debug("\t Iter %s out of %s", str(i+1), str(len_doc_words_list))
 
             if length <= window_size:
@@ -144,7 +136,7 @@ class Heterogeneous(Graph.Graph):
         len_tfidf = tfidf.shape[0]
 
         for ind, row in enumerate(tfidf):
-            if (ind+1) == configs.NUM_PRINT_ITER * ((ind+1)//configs.NUM_PRINT_ITER):
+            if (ind+1) == NUM_PRINT_ITER * ((ind+1)//NUM_PRINT_ITER):
                 logger.debug("\t Iter %s out of %s", str(ind+1), str(len_tfidf))
             for col_ind, value in zip(row.indices, row.data):
                 edge = ('D-' + str(ind+1), vocab[col_ind], {'tfidf': round(value, 2)})
@@ -174,7 +166,7 @@ class Heterogeneous(Graph.Graph):
         for i in range(len(text_docs)):
             prep_text = self.prep.prepocessing_pipeline(text_docs[i]['doc'])
             text_docs_tuple.append((prep_text, {'id': text_docs[i]['id']}))
-            if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
+            if (i+1) == NUM_PRINT_ITER * ((i+1)//NUM_PRINT_ITER):
                 logger.info("\t Iter %s out of %s", str(i+1), str(len(text_docs)))
 
         doc_nlp = self.prep.nlp_pipeline(text_docs_tuple)
@@ -263,18 +255,18 @@ class Heterogeneous(Graph.Graph):
                             doc_words_list.append({'doc': i+1, 'words': words_tokenize})
                             corpus_docs_list.append(text_normalize)
                             vocab.update(set(words_tokenize))
-                            if (i+1) == configs.NUM_PRINT_ITER * ((i+1)//configs.NUM_PRINT_ITER):
+                            if (i+1) == NUM_PRINT_ITER * ((i+1)//NUM_PRINT_ITER):
                                 logger.debug("\t Iter %s out of %s", str(i+1), str(len_corpus_docs))
                             
                     vocab = list(vocab)
-                    self.utils.save_data(data=corpus_docs_list, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
-                    self.utils.save_data(data=vocab, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='vocab', compress=1)
+                    self.utils.save_data(data=corpus_docs_list, path=OUTPUT_DIR_HETERO_PATH, file_name='corpus_normalized', compress=1)
+                    self.utils.save_data(data=vocab, path=OUTPUT_DIR_HETERO_PATH, file_name='vocab', compress=1)
                 else:
                     corpus_docs_list = corpus_docs
             else:
                 logger.debug('\t Load existing norm text')
-                corpus_docs_list = self.utils.load_data(file_name='corpus_normalized', path=configs.OUTPUT_DIR_HETERO_PATH)
-                vocab = self.utils.load_data(file_name='vocab', path=configs.OUTPUT_DIR_HETERO_PATH)'''
+                corpus_docs_list = self.utils.load_data(file_name='corpus_normalized', path=OUTPUT_DIR_HETERO_PATH)
+                vocab = self.utils.load_data(file_name='vocab', path=OUTPUT_DIR_HETERO_PATH)'''
 
             corpus_docs_list, doc_words_list, vocab = self._text_normalize_2(corpus_docs)
             
@@ -308,7 +300,7 @@ class Heterogeneous(Graph.Graph):
         logger.info("Transforming %s text documents...", len(corpus_docs))
 
         corpus_output_graph = [self.__transform_pipeline(corpus_docs)]
-        self.utils.save_data(data=corpus_output_graph, path=configs.OUTPUT_DIR_HETERO_PATH, file_name='corpus_graph', compress=1)
+        self.utils.save_data(data=corpus_output_graph, path=OUTPUT_DIR_HETERO_PATH, file_name='corpus_graph', compress=1)
 
         logger.info("Done transformations")
         return corpus_output_graph

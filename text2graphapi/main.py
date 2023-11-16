@@ -5,12 +5,20 @@ import time
 import matplotlib.pyplot as plt
 import networkx as nx
 import logging
+import argparse
 from sklearn.datasets import fetch_20newsgroups
 import pandas as pd
 import glob
 from functools import reduce
-from src import configs
+
+from src import configs # DEV, PROD
  
+from itertools import chain
+import nltk
+from nltk.corpus import wordnet
+nltk.download('wordnet')
+
+
 
 ''' 
     Main file to run testing for Library
@@ -24,16 +32,15 @@ logger.setLevel(logging.DEBUG)
 
 # *** Configs
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 PRINT_NUM_OUTPUT_GRAPHS = 5
 
-
-# TEST API PYPI
-if configs.ENV_EXECUTION == 'PYPI':
+logger.debug('Import libraries/modules from: %s', configs.ENV_EXECUTION)
+# TEST API PROD
+if configs.ENV_EXECUTION == 'PROD':
     from text2graphapi.src.Cooccurrence  import Cooccurrence
     from text2graphapi.src.Heterogeneous  import Heterogeneous
     from text2graphapi.src.IntegratedSyntacticGraph  import ISG
-# TEST API LOCAL
+# TEST API DEV/LOCAL
 else:
     from src.Cooccurrence import Cooccurrence
     from src.Heterogeneous import Heterogeneous
@@ -163,12 +170,12 @@ def text_to_isg_graph(corpus_docs):
             apply_prep = True, 
             steps_preprocessing = {
                 "handle_blank_spaces": True,
-                "handle_non_ascii": False,
+                "handle_non_ascii": True,
                 "handle_emoticons": True,
                 "handle_html_tags": True,
                 "handle_negations": True,
                 "handle_contractions": True,
-                "handle_stop_words": False,
+                "handle_stop_words": True,
                 "to_lowercase": True
             },
             parallel_exec = False,
@@ -189,7 +196,7 @@ def text_to_hetero_graph(corpus_docs):
         apply_prep = True, 
         load_preprocessing = False, 
         steps_preprocessing = {},
-        language = 'sp', #spanish (sp), english (en), french (fr)
+        language = 'en', #spanish (sp), english (en), french (fr)
         output_format = 'networkx',
     )
     # apply Heterogeneous transformation
@@ -224,7 +231,7 @@ def main(dataset, graph_type, cut_dataset=-1):
     
     
     # set graph_type selcted & apply tranformations
-    logger.info("*** Call API tranformation from: %s", TEST_API_FROM)
+    logger.info("*** Call API tranformation from: %s", configs.ENV_EXECUTION)
     start_time = time.time() # time init
     # expected input  ex: [{"id": 1, "doc": "text_data"}, ...]
     corpus_graph_docs = None
@@ -256,3 +263,4 @@ if __name__ == '__main__':
     # graph_type options: Cooccurrence, Heterogeneous, ISG
 
     main(dataset='default', graph_type='ISG', cut_dataset=10)
+    

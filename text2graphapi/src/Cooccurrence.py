@@ -7,33 +7,24 @@ import traceback
 import time
 from joblib import Parallel, delayed
 import warnings
-from text2graphapi.src import configs
 
 
 # Configs
-TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-if configs.ENV_EXECUTION == 'PYPI':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    from text2graphapi.src import configs
-else:
-    from src.Utils import Utils
-    from src.Preprocessing import Preprocessing
-    from src.GraphTransformation import GraphTransformation
-    from src import Graph
-    from src import configs
 
+from .Utils import Utils
+from .Preprocessing import Preprocessing
+from .GraphTransformation import GraphTransformation
+from .Graph import Graph
+from .configs import ENV_EXECUTION, NUM_PRINT_ITER
 
+logger.debug('Import libraries/modules from :%s', ENV_EXECUTION)
 
-class Cooccurrence(Graph.Graph):
+class Cooccurrence(Graph):
     """This module generate a word-coocurrence graph from raw text 
         
         :param str graph_type: graph type to generate, default=Graph (types: Graph, DiGraph, MultiGraph, MultiDiGraph)
