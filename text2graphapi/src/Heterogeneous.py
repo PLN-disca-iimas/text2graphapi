@@ -171,7 +171,8 @@ class Heterogeneous(Graph):
 
         doc_nlp = self.prep.nlp_pipeline(text_docs_tuple)
         for doc, context in doc_nlp:
-            doc_tokens = [str(token) for token in doc]
+            #doc_tokens = [str(token) for token in doc]
+            doc_tokens = [str(token.lemma_) for token in doc]
             #print(doc.text, context['id'])
             corpus_docs_list.append(str(doc.text))
             doc_words_list.append({'doc': context['id'], 'words': doc_tokens})

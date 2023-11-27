@@ -30,3 +30,5 @@ test_spacy.py
 testing.py
 output_text2graphapi/
 text2graphapi/output_text2graphapi/
+.ipynb_checkpoints/
+text2graphapi/nohup.out

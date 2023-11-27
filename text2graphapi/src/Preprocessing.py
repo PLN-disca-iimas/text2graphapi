@@ -29,9 +29,11 @@ RESOURCES_DIR = os.path.join(ROOT_DIR, 'src/resources')
 try:
     nltk.data.find('tokenizers/punkt')
     nltk.data.find('wordnet')
+    nltk.data.find('omw-1.4')
 except LookupError:
     nltk.download('punkt')
     nltk.download('wordnet')
+    nltk.download('omw-1.4')
 finally:
     from nltk.corpus import wordnet
 
@@ -78,7 +80,7 @@ class Preprocessing(object):
         else: #default self.lang == 'en'
             stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
             self.nlp = self.load_spacy_model("en_core_web_sm")
-        self.nlp.max_length = 10000000 
+        self.nlp.max_length = 100000000
 
 
         stopwords = []
@@ -220,7 +222,7 @@ class Preprocessing(object):
         :return str: Text tokenize by word.  
         """
         doc = self.nlp(text)
-        return [str(token) for token in doc]
+        return [str(token.lemma_) for token in doc]
         #return nltk.word_tokenize(text)
 
 
@@ -231,7 +233,7 @@ class Preprocessing(object):
         :return str: Text tagged.         
         """
         doc = self.nlp(text)
-        return [(token, token.pos_) for token in doc]
+        return [(token.lemma_, token.pos_) for token in doc]
         #return nltk.pos_tag(text)
 
     # get multilevel lang features from text documents (lexical, morpholocial, syntactic)

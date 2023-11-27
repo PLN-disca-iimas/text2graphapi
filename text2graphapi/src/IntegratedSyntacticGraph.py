@@ -5,10 +5,7 @@ import logging
 import sys
 import traceback
 import time
-from joblib import Parallel, delayed
 import warnings
-
-#from .configs import ENV_EXECUTION
 
 # Configs
 warnings.filterwarnings("ignore")
@@ -24,6 +21,7 @@ from .Graph import Graph
 from .configs import ENV_EXECUTION
 
 logger.debug('Import libraries/modules from :%s', ENV_EXECUTION)
+
 
 class ISG(Graph):
     """This module generate a word-coocurrence graph from raw text 
@@ -48,6 +46,7 @@ class ISG(Graph):
         self.parallel_exec = parallel_exec
         self.graph_type = graph_type
         self.output_format = output_format
+        self.int_synt_graph = nx.DiGraph()
         self.utils = Utils()
         self.prep = Preprocessing(lang=language, steps_preprocessing=steps_preprocessing)
         self.graph_trans = GraphTransformation()
@@ -59,6 +58,17 @@ class ISG(Graph):
             text = self.prep.handle_blank_spaces(text)
         return text
 
+    def _set_synonyms(doc: dict, word_synonnyms: list):
+        if len(word_synonnyms):
+            return []
+        else:
+            for syn in doc['token_synonyms']:
+                if str(doc['token_lemma']) == str(syn):
+                    continue
+                else:
+                    return [(f"{syn}_{doc['token_pos']}",{'pos_tag': doc['token_pos']})]
+            return []
+        
     # get nodes an its attributes
     def _get_entities(self, text_doc: list) -> list:  
         nodes = [('ROOT_0', {'pos_tag': 'ROOT_0'})]
@@ -110,7 +120,12 @@ class ISG(Graph):
         int_synt_graph = nx.DiGraph()
         for graph in graphs:
             int_synt_graph = nx.compose(int_synt_graph, graph)
-        self._get_frequency_weight(int_synt_graph)
+        #self._get_frequency_weight(int_synt_graph)
+        return int_synt_graph
+    
+    # merge/add graph to ISG
+    def _add_graph_to_ISG(self, isg_graph: networkx, graph: networkx) -> networkx:
+        int_synt_graph = nx.compose(isg_graph, graph)
         return int_synt_graph
     
 
@@ -126,6 +141,8 @@ class ISG(Graph):
             edges = self._get_relations(multi_lang_feat_doc)
             #5. build graph
             graph = self._build_graph(nodes, edges)
+            #6. merge/add grapg into ISG
+            #self.int_synt_graph = nx.compose(self.int_synt_graph, graph)
         except Exception as e:
             logger.error('Error: %s', str(e))
             logger.debug('Error Detail: %s', str(traceback.format_exc()))
@@ -145,7 +162,8 @@ class ISG(Graph):
         """
         logger.info("Init transformations: Text to Integrated Syntactic Graphs")
         logger.info("Transforming %s text documents...", len(corpus_texts))
-        corpus_output_graph, delayed_func = [], []
+        corpus_output_graph, delayed_func, delayed_func_2 = [], [], []
+        int_synt_graph = nx.DiGraph()
 
         if self.parallel_exec == True: 
             for input_text in corpus_texts:
@@ -153,19 +171,34 @@ class ISG(Graph):
                 delayed_func.append(
                     self.utils.joblib_delayed(funct=self._transform_pipeline, params=input_text) 
                 )
-            corpus_output_graph = self.utils.joblib_parallel(delayed_func, process_name='transform_ISG_graphs')
+            corpus_output_graph = self.utils.joblib_parallel(delayed_func, process_name='transform_graphs')
+            #int_synt_graph = self._build_ISG_graph(corpus_output_graph)
+            
+            # build ISG in parallel/batches
+            batch_size = 100
+            for current_batch in range(0, len(corpus_output_graph), batch_size):
+                output_graph_batch = corpus_output_graph[current_batch : current_batch + batch_size]
+                delayed_func_2.append(
+                    self.utils.joblib_delayed(funct=self._build_ISG_graph, params=output_graph_batch) 
+                )
+            output_ISG_graph = self.utils.joblib_parallel(delayed_func_2, process_name='build_ISG_graphs')
+            int_synt_graph = self._build_ISG_graph(output_ISG_graph)
         else:
             for input_text in corpus_texts:
                 logger.debug('--- Processing doc %s ', str(input_text['id'])) 
-                corpus_output_graph.append(self._transform_pipeline(input_text))
+                graph = self._transform_pipeline(input_text)
+                corpus_output_graph.append(graph)
+                int_synt_graph = self._add_graph_to_ISG(int_synt_graph, graph)
         
-        isg = self._build_ISG_graph(corpus_output_graph)
+        #isg = self._build_ISG_graph(corpus_output_graph)
+        self._get_frequency_weight(int_synt_graph)
+
         logger.info("Done transformations")
         output_dict = {
             'doc_id': 1, 
-            'graph': isg,
-            'number_of_edges': isg.number_of_edges(), 
-            'number_of_nodes': isg.number_of_nodes(), 
+            'graph': int_synt_graph,
+            'number_of_edges': int_synt_graph.number_of_edges(), 
+            'number_of_nodes': int_synt_graph.number_of_nodes(), 
             'status': 'success'
         }
         return [output_dict]
