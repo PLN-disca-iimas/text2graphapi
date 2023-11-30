@@ -65,7 +65,7 @@ def read_custom_dataset():
     corpus_text_docs = [
         {'id': 1, 'doc': 'I wonder if it has changed them back into real little children again'},
         {'id': 2, 'doc': 'My, my, I was forgetting all about the children and the mysterious fern seed'},
-        {'id': 3, 'doc': 'Yes, here they come'}
+        {'id': 3, 'doc': 'Yes, here they come back!'}
         # {'id': 1, 'doc': 'The violence on the TV. The article discussed the idea of the amount of violence on the news'},
         # {'id': 2, 'doc': "The 5 biggest countries by population in 2017 are China, India, USA, Indonesia, and Brazil."},
         # {'id': 3, 'doc': "Box A contains 3 red and 5 white balls, while Box B contains 4 red and 2 blue balls."},
@@ -153,7 +153,6 @@ def cooccur_graph_instance():
                 "handle_non_ascii": True,
                 "handle_emoticons": True,
                 "handle_html_tags": True,
-                "handle_negations": True,
                 "handle_contractions": True,
                 "handle_stop_words": True,
                 "to_lowercase": True
@@ -176,7 +175,6 @@ def hetero_graph_instance():
             "handle_non_ascii": True,
             "handle_emoticons": True,
             "handle_html_tags": True,
-            "handle_negations": True,
             "handle_contractions": True,
             "handle_stop_words": True,
             "to_lowercase": True
@@ -199,7 +197,6 @@ def isg_graph_instance():
             "handle_non_ascii": True,
             "handle_emoticons": True,
             "handle_html_tags": True,
-            "handle_negations": True,
             "handle_contractions": True,
             "handle_stop_words": True,
             "to_lowercase": True
@@ -294,19 +291,19 @@ def main(args):
     logger.info("*** TEST: Show Graphs Outputs ")
     for graph in graph_output[:PRINT_NUM_OUTPUT_GRAPHS]:
         logger.info('\t %s', str(graph))
-        #print(graph['graph'].nodes)
-        #print(graph['graph'].edges)
+        #print(graph['graph'].nodes(data=True))
+        #print(graph['graph'].edges(data=True))
     
     if save_graph == True:
         graph_filename = f'{dataset}_{graph_type}_{TODAY_DATE}' 
         save_data(output_path, graph_filename, graph_output)
 
-
+ 
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-dp", "--dataset_path", help="dataset path to use in graph tranformations", default='/002/usuarios/andric.valdez/andric/datasets/', type=str)
-    parser.add_argument("-op", "--output_path", help="uutput path to save results", default='/002/usuarios/andric.valdez/andric/projects/text2graph-API/text2graphapi/output_test/2023-2/', type=str)
+    parser.add_argument("-op", "--output_path", help="uutput path to save results", default='/002/usuarios/andric.valdez/andric/projects/text2graph-API/text2graphapi/outputs/', type=str)
     parser.add_argument("-dn", "--dataset_name", help="dataset name to use in graph tranformations", default='custom', type=str)
     parser.add_argument("-cpd", "--cut_percentage_dataset", help="percentage of instances to use in the dataset: from 0 to 100 % (default)", default='100', type=str)
     parser.add_argument("-gt", "--graph_type", help="graph transformation type to use", default='cooccurrence', type=str)
@@ -318,7 +315,8 @@ if __name__ == '__main__':
     
     # *** Useful commands
     # nohup python test.py -dn=pan23 -gt=isg -cpd=10 &
-    # python test.py -dn=pan23 -gt=isg -cpd=10
+    # python test.py -dn=20ng -gt=isg -cpd=10 -sl=false -sg=false
+    # python test.py -dn=20ng -gt=isg -cpd=10 -dp=/c/Users/anvaldez/Documents/Docto/Projects/text2graph-API/text2graphapi/datasets/ -op=/c/Users/anvaldez/Documents/Docto/Projects/text2graph-API/text2graphapi/outputs/
     # ps -ef | grep python | grep andric
     # conda activate ../../../../anaconda3/envs/text2graphapi/
     

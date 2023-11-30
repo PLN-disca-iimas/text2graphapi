@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 #logger.debug('Import libraries/modules from: %s', ENV_EXECUTION)
 from .Utils import Utils
@@ -60,7 +60,7 @@ class ISG(Graph):
 
     def _set_synonyms(doc: dict, word_synonnyms: list):
         if len(word_synonnyms):
-            return []
+            return [] 
         else:
             for syn in doc['token_synonyms']:
                 if str(doc['token_lemma']) == str(syn):
@@ -128,26 +128,40 @@ class ISG(Graph):
         int_synt_graph = nx.compose(isg_graph, graph)
         return int_synt_graph
     
+    def _add_graph_to_ISG_V2(self, graph: networkx) -> networkx:
+        self.int_synt_graph.add_edges_from(graph.edges(data=True))
+        self.int_synt_graph.add_nodes_from(graph.nodes(data=True))
+    
 
-    def _transform_pipeline(self, text_instance: list) -> list:
-        try:
-            #1. text preprocessing
-            prep_text = self._text_normalize(text_instance['doc'])
-            #2. get multilevel lang features from text documents (lexical, morpholocial, syntactic)
-            multi_lang_feat_doc = self.prep.get_multilevel_lang_features(prep_text)
-            #3. get_entities
-            nodes = self._get_entities(multi_lang_feat_doc)
-            #4. get_relations
-            edges = self._get_relations(multi_lang_feat_doc)
-            #5. build graph
-            graph = self._build_graph(nodes, edges)
-            #6. merge/add grapg into ISG
-            #self.int_synt_graph = nx.compose(self.int_synt_graph, graph)
-        except Exception as e:
-            logger.error('Error: %s', str(e))
-            logger.debug('Error Detail: %s', str(traceback.format_exc()))
-        else:
-            return graph
+    def _transform_pipeline(self, docs: tuple) -> list:
+        int_synt_graph = nx.DiGraph()
+        for doc, context in list(docs):
+            doc_instance = {'id': context['id'], 'doc': doc}
+            try:
+                #1. text preprocessing
+                #prep_text = self._text_normalize(text_instance['doc'])
+                
+                #2. get multilevel lang features from text documents (lexical, morpholocial, syntactic)
+                #multi_lang_feat_doc = self.prep.get_multilevel_lang_features(prep_text)
+                
+                #3. get_entities
+                nodes = self._get_entities(doc_instance['doc']._.multilevel_lang_info)
+                
+                #4. get_relations
+                edges = self._get_relations(doc_instance['doc']._.multilevel_lang_info)
+                
+                #5. build graph
+                graph = self._build_graph(nodes, edges)
+                
+                #6. merge/add grapg into ISG
+                int_synt_graph.add_edges_from(graph.edges(data=True))
+                int_synt_graph.add_nodes_from(graph.nodes(data=True))
+            except Exception as e:
+                logger.error('Error: %s', str(e))
+                logger.error('Error Detail: %s', str(traceback.format_exc()))
+        
+        self._get_frequency_weight(int_synt_graph)
+        return int_synt_graph
         
 
     # tranform raw_text to graph based on input params
@@ -165,33 +179,22 @@ class ISG(Graph):
         corpus_output_graph, delayed_func, delayed_func_2 = [], [], []
         int_synt_graph = nx.DiGraph()
 
-        if self.parallel_exec == True: 
-            for input_text in corpus_texts:
-                logger.debug('--- Processing doc %s ', str(input_text['id'])) 
-                delayed_func.append(
-                    self.utils.joblib_delayed(funct=self._transform_pipeline, params=input_text) 
-                )
-            corpus_output_graph = self.utils.joblib_parallel(delayed_func, process_name='transform_graphs')
-            #int_synt_graph = self._build_ISG_graph(corpus_output_graph)
+        logger.debug("Preprocessing")
+        prep_docs = []
+        for doc_data in corpus_texts:
+            if self.apply_prep == True:
+                doc_data['doc'] = self._text_normalize(doc_data['doc'])
+            prep_docs.append((
+                    doc_data['doc'], 
+                    {'id': doc_data['id']}
+                    #{'id': doc_data['id'], '_get_entities': self._get_entities, '_get_relations': self._get_relations, '_build_graph': self._build_graph}
+                ))
             
-            # build ISG in parallel/batches
-            batch_size = 100
-            for current_batch in range(0, len(corpus_output_graph), batch_size):
-                output_graph_batch = corpus_output_graph[current_batch : current_batch + batch_size]
-                delayed_func_2.append(
-                    self.utils.joblib_delayed(funct=self._build_ISG_graph, params=output_graph_batch) 
-                )
-            output_ISG_graph = self.utils.joblib_parallel(delayed_func_2, process_name='build_ISG_graphs')
-            int_synt_graph = self._build_ISG_graph(output_ISG_graph)
-        else:
-            for input_text in corpus_texts:
-                logger.debug('--- Processing doc %s ', str(input_text['id'])) 
-                graph = self._transform_pipeline(input_text)
-                corpus_output_graph.append(graph)
-                int_synt_graph = self._add_graph_to_ISG(int_synt_graph, graph)
-        
-        #isg = self._build_ISG_graph(corpus_output_graph)
-        self._get_frequency_weight(int_synt_graph)
+        logger.debug("Spacy nlp_pipeline")
+        docs = self.prep.nlp_pipeline(prep_docs, params = {'get_multilevel_lang_features': True})
+
+        logger.debug("Transform_pipeline")
+        int_synt_graph = self._transform_pipeline(docs)
 
         logger.info("Done transformations")
         output_dict = {
@@ -204,3 +207,47 @@ class ISG(Graph):
         return [output_dict]
     
 
+
+
+'''
+if self.parallel_exec == True: 
+    for input_text in corpus_texts:
+        logger.debug('--- Processing doc %s ', str(input_text['id'])) 
+        delayed_func.append(
+            self.utils.joblib_delayed(funct=self._transform_pipeline, params=input_text) 
+        )
+    corpus_output_graph = self.utils.joblib_parallel(delayed_func, process_name='transform_graphs')
+    #int_synt_graph = self._build_ISG_graph(corpus_output_graph)
+    
+    # build ISG in parallel/batches
+    batch_size = 100
+    for current_batch in range(0, len(corpus_output_graph), batch_size):
+        output_graph_batch = corpus_output_graph[current_batch : current_batch + batch_size]
+        delayed_func_2.append(
+            self.utils.joblib_delayed(funct=self._build_ISG_graph, params=output_graph_batch) 
+        )
+    output_ISG_graph = self.utils.joblib_parallel(delayed_func_2, process_name='build_ISG_graphs')
+    int_synt_graph = self._build_ISG_graph(output_ISG_graph)
+else:
+    for input_text in corpus_texts:
+        logger.debug('--- Processing doc %s ', str(input_text['id'])) 
+        graph = self._transform_pipeline(input_text)
+        corpus_output_graph.append(graph)
+        int_synt_graph = self._add_graph_to_ISG(int_synt_graph, graph)
+'''
+
+'''
+for doc, context in list(docs):
+    #print("\n---------------------------> ", doc._.multilevel_lang_features)
+    #graph = self._transform_pipeline({'id': context['id'], 'doc': doc})
+    #logger.info("End Entities, Relation, Graph for doc %s", str(cnt))
+
+    #corpus_output_graph.append(doc._.doc_graph)
+    #int_synt_graph = self._add_graph_to_ISG(int_synt_graph, doc._.doc_graph)
+    nodes = self._get_entities(doc._.multilevel_lang_info)
+    edges = self._get_relations(doc._.multilevel_lang_info)
+    graph = self._build_graph(nodes, edges)
+    int_synt_graph.add_edges_from(graph.edges(data=True))
+    int_synt_graph.add_nodes_from(graph.nodes(data=True))
+    #logger.info("_add_graph_to_ISG for doc %s", str(cnt))
+'''

@@ -13,8 +13,13 @@ import logging
 from nltk.corpus import stopwords
 from spacy.cli import download
 from spacy.language import Language
-
+from spacy.lang.en import stop_words
 from itertools import chain
+from spacy.tokens import Doc
+import networkx as nx
+import networkx
+
+from .configs import DEFAULT_NUM_CPU_JOBLIB
 
 
 # Logging configs
@@ -33,7 +38,6 @@ try:
 except LookupError:
     nltk.download('punkt')
     nltk.download('wordnet')
-    nltk.download('omw-1.4')
 finally:
     from nltk.corpus import wordnet
 
@@ -63,7 +67,7 @@ class Preprocessing(object):
             'handle_non_ascii': self.handle_non_ascii,
             'handle_emoticons': self.handle_emoticons,
             'handle_html_tags': self.handle_html_tags,
-            'handle_negations': self.handle_negations,
+            #'handle_negations': self.handle_negations,
             'handle_contractions': self.handle_contractions,
             'handle_stop_words': self.handle_stop_words,
             'to_lowercase': self.to_lowercase,
@@ -80,7 +84,13 @@ class Preprocessing(object):
         else: #default self.lang == 'en'
             stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
             self.nlp = self.load_spacy_model("en_core_web_sm")
+        
         self.nlp.max_length = 100000000
+        #self.nlp.add_pipe("info_component", name="print_info", last=True)
+        #self.nlp.add_pipe("multilevel_lang_features", name="multilevel_lang_features", last=True)
+        logger.debug(self.nlp.pipe_names)
+        print("------------> ", self.nlp.pipe_names)
+        #Doc.set_extension("preproc_text_tokens", default=None)
 
 
         stopwords = []
@@ -92,7 +102,7 @@ class Preprocessing(object):
 
 
     def load_spacy_model(self, spacy_model):
-        exclude_modules = ["ner", "textcat"]
+        exclude_modules = ["ner", "textcat", "tok2vec"]
         try:
             spacy.load(spacy_model, exclude=exclude_modules)
             logger.info('Has already installed spacy model %s', spacy_model)
@@ -221,9 +231,9 @@ class Preprocessing(object):
         :params str text: Text for preprocesesing.
         :return str: Text tokenize by word.  
         """
-        doc = self.nlp(text)
-        return [str(token.lemma_) for token in doc]
-        #return nltk.word_tokenize(text)
+        #doc = self.nlp(text)
+        #return [str(token.lemma_) for token in doc]
+        return nltk.word_tokenize(text)
 
 
     def pos_tagger(self, text: str) -> list:
@@ -232,18 +242,16 @@ class Preprocessing(object):
         :params str text: Text for preprocesesing.
         :return str: Text tagged.         
         """
-        doc = self.nlp(text)
-        return [(token.lemma_, token.pos_) for token in doc]
-        #return nltk.pos_tag(text)
+        #doc = self.nlp(text)
+        #return [(token.lemma_, token.pos_) for token in doc]
+        return nltk.pos_tag(text)
 
-    # get multilevel lang features from text documents (lexical, morpholocial, syntactic)
-    def get_multilevel_lang_features(self, text: str) -> list:
+    def get_multilevel_lang_features(self, doc) -> list:
         """Get multilevel lang features from text documents (lexical, morpholocial, syntactic and semantic level).
 
         :params str text: Text for preprocesesing.
         :return str: Text with multilevel lang features.
         """
-        doc = self.nlp(text)
         doc_tokens = [] 
         for token in doc:
             synonyms_token = wordnet.synsets(str(token.lemma_))
@@ -265,31 +273,79 @@ class Preprocessing(object):
             if token.dep_ == 'ROOT':
                 token_info['is_root_token'] = True
             doc_tokens.append(token_info)
+
         return doc_tokens
+ 
+# TESTING... *************************************************************
+    
+    def nlp_pipeline(self, docs: list, params = {'get_multilevel_lang_features': False}):
+        int_synt_graph = nx.DiGraph()
+        doc_tuples = []
+        Doc.set_extension("preproc_text_tokens", default=[])
+        Doc.set_extension("multilevel_lang_info", default=[])
+        Doc.set_extension("doc_graph", default=None)
 
-# TESTING...
-    @Language.component("stop_words_component")
-    def stop_words_component(doc):
-        # Do something to the doc here
-        for token in doc:
-            without_stopwords = [word for word in doc if not word.lower().strip() in self.stopwords]
-        return doc
-
-
-    def nlp_pipeline(self, docs: list):
-        # docs = (text_doc, {"doc_id": "value", ...})
-        # self.nlp.add_pipe("stop_words_component", last=True)
-        doc_tuples = self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=2000)
+        #self.nlp.add_pipe("multilevel_lang_features", name="multilevel_lang_features", last=True)
+                          
+        for doc, context in list(self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=1000)):
+            if params['get_multilevel_lang_features'] == True:
+                multilevel_lang_features = self.get_multilevel_lang_features(doc)
+                doc._.multilevel_lang_info = multilevel_lang_features
+            '''
+            preproc_text =  self.word_tokenize(self.prepocessing_pipeline(doc.text))
+            doc.set_extension("prep_text_" , default=preproc_text)
+            doc._.preproc_text_tokens = preproc_text
+            '''
+            '''
+            nodes = context['_get_entities'](doc._.multilevel_lang_info)
+            edges = context['_get_relations'](doc._.multilevel_lang_info)
+            graph = context['_build_graph'](nodes, edges)
+            doc._.doc_graph = graph            
+            int_synt_graph.add_edges_from(graph.edges(data=True))
+            int_synt_graph.add_nodes_from(graph.nodes(data=True))
+            '''
+            doc_tuples.append((doc, context))
         return doc_tuples
 
 
+    @Language.component("multilevel_lang_features")
+    def multilevel_lang_features(doc) -> list:
+        """Get multilevel lang features from text documents (lexical, morpholocial, syntactic and semantic level).
 
-'''
-doc_tuples = []
-for doc in self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=2000):
-    # Do something with the doc here
-    print(doc, str(doc))
-    doc[0] = self.handle_stop_words(doc[0])
-    doc_tuples.append(doc)
-return doc_tuples
-'''
+        :params str text: Text for preprocesesing.
+        :return str: Text with multilevel lang features.
+        """
+        doc_tokens = [] 
+        for token in doc:
+            synonyms_token = wordnet.synsets(str(token.lemma_))
+            synonyms_token_head = wordnet.synsets(str(token.head.lemma_))
+            synonyms_token_list = list(set(chain.from_iterable([word.lemma_names() for word in synonyms_token])))
+            synonyms_token_head_list = list(set(chain.from_iterable([word.lemma_names() for word in synonyms_token_head])))
+            token_info = {
+                'token': token.text,
+                'token_lemma': token.lemma_,
+                'token_pos': token.pos_,
+                'token_dependency': token.dep_,
+                'token_head': token.head,
+                'token_head_lemma': token.head.lemma_,
+                'token_head_pos': token.head.pos_,
+                'token_synonyms': synonyms_token_list[:5],
+                'token_head_synonyms': synonyms_token_head_list[:5],
+                'is_root_token': False,
+            }
+            if token.dep_ == 'ROOT':
+                token_info['is_root_token'] = True
+            doc_tokens.append(token_info)
+
+        doc._.multilevel_lang_info = doc_tokens
+        return doc
+
+
+    @Language.component("info_component")
+    def info_component(doc):
+        print(f"After tokenization, this doc has {len(doc)} tokens.")
+        print("The part-of-speech tags are:", [token.pos_ for token in doc])
+        if len(doc) < 10:
+            print("This is a pretty short document.")
+        return doc
+    
