@@ -9,23 +9,23 @@ echo "$LOG_INFO Shell script init"
 
 # >>>>> exec scripts test:
 
-# *** ISG: pan23 | pan22 | 20_News_Group | spanish_fake_news
+# *** ISG: pan23 | pan22 | 20_News_Group | spanish_fake_news | TGB
 #nohup python test.py -dn=pan23 -gt=isg -cpd=100 -sl=true -sg=true &
 #nohup python test.py -dn=pan22 -gt=isg -cpd=100 -sl=true -sg=true &
 #nohup python test.py -dn=20ng -gt=isg -cpd=100 -sl=true -sg=true &
-#nohup python test.py -dn=spanish_fake_news -gt=isg -cpd=100 -sl=true -sg=true &
-#nohup python test.py -dn=french_tgb -gt=isg -cpd=100 -sl=true -sg=true &
+#nohup python test.py -dn=spanish_fake_news -gt=isg -cpd=100 -sl=true -sg=true -dl=sp &
+nohup python test.py -dn=french_tgb -gt=isg -cpd=100 -sl=true -sg=true -dl=fr &
 
-# *** Cooc: pan23 | pan22 | 20_News_Group | spanish_fake_news
+# *** Cooc: pan23 | pan22 | 20_News_Group | spanish_fake_news | TGB
 #nohup python test.py -dn=pan23 -gt=cooccurrence -cpd=100 -sl=true -sg=true &
 #nohup python test.py -dn=pan22 -gt=cooccurrence -cpd=100 -sl=true -sg=true &
 #nohup python test.py -dn=20ng -gt=cooccurrence -cpd=100 -sl=true -sg=true &
-#nohup python test.py -dn=spanish_fake_news -gt=cooccurrence -cpd=100 -sl=true -sg=true &
-#nohup python test.py -dn=french_tgb -gt=cooccurrence -cpd=100 -sl=true -sg=true &
+#nohup python test.py -dn=spanish_fake_news -gt=cooccurrence -cpd=100 -sl=true -sg=true -dl=sp  &
+nohup python test.py -dn=french_tgb -gt=cooccurrence -cpd=100 -sl=true -sg=true -dl=fr &
 
-# *** Hetero: pan23 | pan22 | 20_News_Group | spanish_fake_news
+# *** Hetero: pan23 | pan22 | 20_News_Group | spanish_fake_news | TGB
 #nohup python test.py -dn=pan23 -gt=heterogeneous -cpd=100 -sl=true -sg=true &
 #nohup python test.py -dn=pan22 -gt=heterogeneous -cpd=100 -sl=true -sg=true &
 #nohup python test.py -dn=20ng -gt=heterogeneous -cpd=100 -sl=true -sg=true &
-#nohup python test.py -dn=spanish_fake_news -gt=heterogeneous -cpd=100 -sl=true -sg=true &
-#nohup python test.py -dn=french_tgb -gt=heterogeneous -cpd=100 -sl=true -sg=true &
+#nohup python test.py -dn=spanish_fake_news -gt=heterogeneous -cpd=100 -sl=true -sg=true -dl=sp  &
+nohup python test.py -dn=french_tgb -gt=heterogeneous -cpd=100 -sl=true -sg=true -dl=fr &

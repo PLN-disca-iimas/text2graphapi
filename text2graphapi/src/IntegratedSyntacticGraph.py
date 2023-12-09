@@ -181,7 +181,11 @@ class ISG(Graph):
 
         logger.debug("Preprocessing")
         prep_docs = []
+        word_doc_cnt = 0
+        doc_cnt = 0
         for doc_data in corpus_texts:
+            word_doc_cnt += len(self.prep.word_tokenize(doc_data['doc']))
+            doc_cnt += 1 
             if self.apply_prep == True:
                 doc_data['doc'] = self._text_normalize(doc_data['doc'])
             prep_docs.append((
@@ -189,7 +193,8 @@ class ISG(Graph):
                     {'id': doc_data['id']}
                     #{'id': doc_data['id'], '_get_entities': self._get_entities, '_get_relations': self._get_relations, '_build_graph': self._build_graph}
                 ))
-            
+        
+
         logger.debug("Spacy nlp_pipeline")
         docs = self.prep.nlp_pipeline(prep_docs, params = {'get_multilevel_lang_features': True})
 

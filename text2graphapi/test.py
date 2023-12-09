@@ -117,7 +117,7 @@ def read_french_tgb_dataset(path, dataset_name='french_tgb', files_pattern = '/*
     corpus_text_docs = []
     dataset_path = path + dataset_name + files_pattern
     dataset_json_docs = glob.glob(dataset_path)
-    for json_file in dataset_json_docs[:]:
+    for json_file in dataset_json_docs[:100]:
         f = open(json_file)
         file_data = json.load(f)
         corpus_text_docs.append({
@@ -142,7 +142,7 @@ def read_tass_emotion_detection_dataset():
         id += 1
     '''
 
-def cooccur_graph_instance():
+def cooccur_graph_instance(lang='en'):
     # create co_occur object
     co_occur = Cooccurrence(
             graph_type = 'DiGraph', 
@@ -158,13 +158,13 @@ def cooccur_graph_instance():
                 "to_lowercase": True
             },
             parallel_exec = False,
-            language = LANGUAGE, #es, en, fr
+            language = lang, #es, en, fr
             output_format = 'networkx'
         )
     return co_occur
 
 
-def hetero_graph_instance():
+def hetero_graph_instance(lang='en'):
     # create co_occur object
     hetero_graph = Heterogeneous(
         graph_type = 'DiGraph',
@@ -181,13 +181,13 @@ def hetero_graph_instance():
         },
         parallel_exec = False,
         load_preprocessing = False, 
-        language = LANGUAGE, #sp, en, fr
+        language = lang, #sp, en, fr
         output_format = 'networkx',
     )
     return hetero_graph
 
 
-def isg_graph_instance():
+def isg_graph_instance(lang='en'):
     # create isg object
     isg = ISG(
         graph_type = 'DiGraph',
@@ -202,7 +202,7 @@ def isg_graph_instance():
             "to_lowercase": True
         },
         parallel_exec = False,
-        language = LANGUAGE, #spanish (sp), english (en), french (fr)
+        language = lang, #spanish (sp), english (en), french (fr)
         output_format = 'networkx'
     )
     return isg
@@ -233,14 +233,14 @@ def get_dataset(path, dataset):
         return read_custom_dataset()
 
     
-def get_text_2_graph_instance(graph_type):
+def get_text_2_graph_instance(graph_type, lang='en'):
     if graph_type == 'cooccurrence':
-        g = cooccur_graph_instance()
-        return cooccur_graph_instance()
+        g = cooccur_graph_instance(lang)
+        return cooccur_graph_instance(lang)
     elif graph_type == 'heterogeneous':
-        return hetero_graph_instance()
+        return hetero_graph_instance(lang)
     elif graph_type == 'isg':
-        return isg_graph_instance()
+        return isg_graph_instance(lang)
     else:
         ...
     
@@ -250,6 +250,7 @@ def main(args):
     dataset = args['dataset_name']
     graph_type = args['graph_type']
     output_path = args['output_path']
+    dataset_language = args['dataset_language']
     save_logs = args['save_logs'] == 'true'
     save_graph = args['save_graph'] == 'true'
     cut_percentage_dataset = args['cut_percentage_dataset']
@@ -266,7 +267,7 @@ def main(args):
     
     # get instance from text2graph library
     logger.info("*** TEST: Using graph type %s", graph_type)
-    graph_instance = get_text_2_graph_instance(graph_type)
+    graph_instance = get_text_2_graph_instance(graph_type, lang=dataset_language)
     logger.info("\t * Graph config: %s", str(vars(graph_instance)))
     # apply text to graph transformation
     logger.info("*** TEST: Call API tranformation from %s", configs.ENV_EXECUTION)
@@ -305,6 +306,7 @@ if __name__ == '__main__':
     parser.add_argument("-dp", "--dataset_path", help="dataset path to use in graph tranformations", default='/002/usuarios/andric.valdez/andric/datasets/', type=str)
     parser.add_argument("-op", "--output_path", help="uutput path to save results", default='/002/usuarios/andric.valdez/andric/projects/text2graph-API/text2graphapi/outputs/', type=str)
     parser.add_argument("-dn", "--dataset_name", help="dataset name to use in graph tranformations", default='custom', type=str)
+    parser.add_argument("-dl", "--dataset_language", help="language of the dataset: English, Spanish or French", default='en', type=str)
     parser.add_argument("-cpd", "--cut_percentage_dataset", help="percentage of instances to use in the dataset: from 0 to 100 % (default)", default='100', type=str)
     parser.add_argument("-gt", "--graph_type", help="graph transformation type to use", default='cooccurrence', type=str)
     parser.add_argument("-sl", "--save_logs", help="print and save logs", default='false', type=str)

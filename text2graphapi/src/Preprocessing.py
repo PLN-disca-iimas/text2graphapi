@@ -85,7 +85,7 @@ class Preprocessing(object):
             stoword_path = RESOURCES_DIR + '/stopwords_english.txt'
             self.nlp = self.load_spacy_model("en_core_web_sm")
         
-        self.nlp.max_length = 100000000
+        self.nlp.max_length = 10000000000
         #self.nlp.add_pipe("info_component", name="print_info", last=True)
         #self.nlp.add_pipe("multilevel_lang_features", name="multilevel_lang_features", last=True)
         logger.debug(self.nlp.pipe_names)
@@ -246,6 +246,7 @@ class Preprocessing(object):
         #return [(token.lemma_, token.pos_) for token in doc]
         return nltk.pos_tag(text)
 
+    
     def get_multilevel_lang_features(self, doc) -> list:
         """Get multilevel lang features from text documents (lexical, morpholocial, syntactic and semantic level).
 
@@ -275,9 +276,8 @@ class Preprocessing(object):
             doc_tokens.append(token_info)
 
         return doc_tokens
- 
-# TESTING... *************************************************************
-    
+     
+        
     def nlp_pipeline(self, docs: list, params = {'get_multilevel_lang_features': False}):
         int_synt_graph = nx.DiGraph()
         doc_tuples = []
@@ -307,6 +307,8 @@ class Preprocessing(object):
             doc_tuples.append((doc, context))
         return doc_tuples
 
+    
+# TESTING... *************************************************************
 
     @Language.component("multilevel_lang_features")
     def multilevel_lang_features(doc) -> list:

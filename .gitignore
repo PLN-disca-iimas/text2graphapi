@@ -20,6 +20,7 @@ text2graphapi/datasets/tass_emotion_detection/*
 !text2graphapi/datasets/spanish_fake_news/.gitkeep
 !text2graphapi/datasets/tass_emotion_detection/.gitkeep
 
+text2graphapi/outputs/
 text2graphapi/output_test/
 text2graphapi/main_server.py
 build/
