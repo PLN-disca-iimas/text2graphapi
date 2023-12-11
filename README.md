@@ -92,3 +92,5 @@ After the execution of this code, we have one undirected representing the whole 
 	'status': 'success'
 }]
 ```
+## **Acknowledgments**
+This work has been carried out with the support of DGAPA UNAM-PAPIIT projects TA101722, IT100822, and CONAHCYT CF-2023-G-64.  The authors also thank CONAHCYT for the computing resources provided through the Deep Learning Platform for Language Technologies of the INAOE Supercomputing Laboratory.
