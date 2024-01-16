@@ -4,6 +4,7 @@ docs/sources/_templates
 text2graphapi/docs/build/
 text2graphapi/docs/sources/_templates
 __pycache__/
+text2graphapi/outputs/*
 text2graphapi/datasets/pan14/*
 text2graphapi/datasets/pan15/*
 text2graphapi/datasets/pan20/*
@@ -12,6 +13,7 @@ text2graphapi/datasets/pan23/*
 text2graphapi/datasets/spanish_fake_news/*
 text2graphapi/datasets/tass_emotion_detection/*
 
+!text2graphapi/outputs/.gitkeep
 !text2graphapi/datasets/pan14/.gitkeep
 !text2graphapi/datasets/pan15/.gitkeep
 !text2graphapi/datasets/pan20/.gitkeep
@@ -20,16 +22,13 @@ text2graphapi/datasets/tass_emotion_detection/*
 !text2graphapi/datasets/spanish_fake_news/.gitkeep
 !text2graphapi/datasets/tass_emotion_detection/.gitkeep
 
-text2graphapi/outputs/
 text2graphapi/output_test/
 text2graphapi/main_server.py
 build/
 dist/
 text2graphapi.egg-info/
-notes.txt
 test_spacy.py
 testing.py
 output_text2graphapi/
-text2graphapi/output_text2graphapi/
 .ipynb_checkpoints/
 text2graphapi/nohup.out

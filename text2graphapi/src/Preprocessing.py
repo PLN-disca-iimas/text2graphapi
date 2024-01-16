@@ -89,8 +89,9 @@ class Preprocessing(object):
         #self.nlp.add_pipe("info_component", name="print_info", last=True)
         #self.nlp.add_pipe("multilevel_lang_features", name="multilevel_lang_features", last=True)
         logger.debug(self.nlp.pipe_names)
-        print("------------> ", self.nlp.pipe_names)
+        #print("------------> ", self.nlp.pipe_names)
         #Doc.set_extension("preproc_text_tokens", default=None)
+        #Doc.set_extension("multilevel_lang_info", default=[])
 
 
         stopwords = []
@@ -281,16 +282,14 @@ class Preprocessing(object):
     def nlp_pipeline(self, docs: list, params = {'get_multilevel_lang_features': False}):
         int_synt_graph = nx.DiGraph()
         doc_tuples = []
-        Doc.set_extension("preproc_text_tokens", default=[])
-        Doc.set_extension("multilevel_lang_info", default=[])
-        Doc.set_extension("doc_graph", default=None)
-
+        Doc.set_extension("multilevel_lang_info", default=[], force=True)
+        #Doc.set_extension("preproc_text_tokens", default=[])
+        #Doc.set_extension("doc_graph", default=None)
         #self.nlp.add_pipe("multilevel_lang_features", name="multilevel_lang_features", last=True)
-                          
+
         for doc, context in list(self.nlp.pipe(docs, as_tuples=True, n_process=1, batch_size=1000)):
             if params['get_multilevel_lang_features'] == True:
-                multilevel_lang_features = self.get_multilevel_lang_features(doc)
-                doc._.multilevel_lang_info = multilevel_lang_features
+                doc._.multilevel_lang_info = self.get_multilevel_lang_features(doc)
             '''
             preproc_text =  self.word_tokenize(self.prepocessing_pipeline(doc.text))
             doc.set_extension("prep_text_" , default=preproc_text)
@@ -309,7 +308,7 @@ class Preprocessing(object):
 
     
 # TESTING... *************************************************************
-
+'''
     @Language.component("multilevel_lang_features")
     def multilevel_lang_features(doc) -> list:
         """Get multilevel lang features from text documents (lexical, morpholocial, syntactic and semantic level).
@@ -351,3 +350,4 @@ class Preprocessing(object):
             print("This is a pretty short document.")
         return doc
     
+'''

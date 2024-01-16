@@ -1,0 +1,16 @@
+
+Requerimientos libreria:
+    * crear en root file LICENSE.txt
+    * crear en root file CHANGELOG.txt
+    * crear en root file MNIFEST.in
+    * crear en root file setup.py
+    * Instalar módulos setuptool y twine, con pip install
+    * Generar directorio dist con: python setup.py sdist (whl file: python setup.py bdist_wheel)
+    * Crear cuenta en PYPI
+    * Ejecutar cmd: twine upload --repository-url=https://upload.pypi.org/legacy/ dist/* 
+
+
+Spinxh Docu:
+    * create html: .\make.bat html
+    * clean html: .\make.bat clean html
+    * sphinx-apidoc -o .\source\ ..\src\
