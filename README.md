@@ -12,8 +12,6 @@ The following diagram depicts the pipeline overview for the text to graph tranfo
 
 ![texto to graph pipeline](https://www.linkpicture.com/q/texto-to-graph.pipeline.png#center)
 
-![texto to graph pipeline](https://github.com/PLN-disca-iimas/DigitalHumanitiesSchool/blob/main/Photos/IMG_2760.jpeg#center)
-
 ## **_Installation_ from PYPI**
 Inside your project, from your CLI type the following command in order to install the latest version of the library:
 ```Python
