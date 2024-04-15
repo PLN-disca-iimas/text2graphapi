@@ -178,4 +178,7 @@ class Cooccurrence(Graph.Graph):
         
         logger.info("Done transformations")
         return corpus_output_graph
+    
+    def plot_graph(self, graph: nx.DiGraph, output_path: str):
+        return super().plot(graph, output_path)
 
