@@ -138,6 +138,7 @@ class Cooccurrence(Graph.Graph):
             edges = self._get_relations(prep_text)
             #4. build graph
             graph = self._build_graph(nodes, edges)
+            output_dict['nx_graph'] = graph
             output_dict['number_of_edges'] += graph.number_of_edges()
             output_dict['number_of_nodes'] += graph.number_of_nodes()
             #5. graph_transformation
