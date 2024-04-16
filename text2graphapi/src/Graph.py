@@ -41,8 +41,9 @@ class Graph(object):
             
             :rtype: none
         """
-        graph = nx.relabel_nodes(graph, options.get("nodes_labels", {}))
-        edge_labels = options.get("edge_labels", [])
+        node_labels = options.get("nodes_labels", {})
+        edge_labels = options.get("edge_labels", {})
+        graph = nx.relabel_nodes(graph, node_labels)
         pos = nx.spring_layout(graph, k=1, iterations=20)
 
         nx.draw_networkx_nodes(
