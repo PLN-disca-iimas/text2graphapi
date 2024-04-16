@@ -42,8 +42,6 @@ class Graph(object):
             :rtype: none
         """
         graph = nx.relabel_nodes(graph, options.get("nodes_labels", {}))
-        nodes_colors = options.get("nodes_colors", []) 
-        edges_colors = options.get("edge_colors", [])
         edge_labels = options.get("edge_labels", [])
         pos = nx.spring_layout(graph, k=1, iterations=20)
 
@@ -51,25 +49,23 @@ class Graph(object):
             graph, 
             pos, 
             cmap=plt.get_cmap('tab20'), 
-            node_color=nodes_colors, 
-            node_size=700
+            **options.get("nodes_options", {}) 
         )
         nx.draw_networkx_labels(
             graph, 
             pos,
-            font_size=7
+            **options.get("nodes_labels_options", {}) 
         )
         nx.draw_networkx_edges(
             graph, 
             pos,
             edgelist=graph.edges(), 
-            arrows=True, 
-            arrowsize=5, 
-            edge_color=edges_colors
+            **options.get("edges_options", {})
         )
         nx.draw_networkx_edge_labels(
-            graph, pos,
+            graph, 
+            pos,
             edge_labels=edge_labels,
-            font_size=5
+            **options.get("edges_labels_options", {})
         )
         plt.savefig(output_path, dpi=300)
