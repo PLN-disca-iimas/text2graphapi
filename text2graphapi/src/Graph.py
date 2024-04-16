@@ -44,11 +44,9 @@ class Graph(object):
         """
         nodes_colors = [random.randint(0, 100) / 1000 for node in graph.nodes()]
         colors_options = ["r","k","b"]
-
         edges_colors = [random.choice(colors_options) for edge in graph.edges()]
-
-
         pos = nx.spring_layout(graph, k=1, iterations=20)
+        
         nx.draw_networkx_nodes(graph, pos, cmap=plt.get_cmap('tab20'), node_color=nodes_colors, node_size=100)
         nx.draw_networkx_labels(graph, pos, font_size=5)
         nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), arrows=True, arrowsize=5, edge_color=edges_colors)
