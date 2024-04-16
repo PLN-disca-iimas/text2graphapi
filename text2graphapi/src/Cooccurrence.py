@@ -139,6 +139,8 @@ class Cooccurrence(Graph.Graph):
             #4. build graph
             graph = self._build_graph(nodes, edges)
             output_dict['nx_graph'] = graph
+            output_dict['nodes'] = nodes
+            output_dict['edges'] = edges
             output_dict['number_of_edges'] += graph.number_of_edges()
             output_dict['number_of_nodes'] += graph.number_of_nodes()
             #5. graph_transformation
@@ -180,6 +182,6 @@ class Cooccurrence(Graph.Graph):
         logger.info("Done transformations")
         return corpus_output_graph
     
-    def plot_graph(self, graph: nx.DiGraph, output_path: str):
-        return super().plot(graph, output_path)
+    def plot_graph(self, graph: nx.DiGraph, output_path: str, options: dict = {}):
+        return super().plot(graph, output_path, options)
 

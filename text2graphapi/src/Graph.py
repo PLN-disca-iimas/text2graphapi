@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 import networkx
-import random
 
 class Graph(object): 
     """
@@ -32,7 +31,7 @@ class Graph(object):
         return graph
 
 
-    def plot(self, graph: nx.DiGraph, output_path: str):
+    def plot(self, graph: nx.DiGraph, output_path: str, options: dict = {}):
         """
             This method allow to plot a networkx graph
             
@@ -42,12 +41,35 @@ class Graph(object):
             
             :rtype: none
         """
-        nodes_colors = [random.randint(0, 100) / 1000 for node in graph.nodes()]
-        colors_options = ["r","k","b"]
-        edges_colors = [random.choice(colors_options) for edge in graph.edges()]
+        graph = nx.relabel_nodes(graph, options.get("nodes_labels", {}))
+        nodes_colors = options.get("nodes_colors", []) 
+        edges_colors = options.get("edge_colors", [])
+        edge_labels = options.get("edge_labels", [])
         pos = nx.spring_layout(graph, k=1, iterations=20)
-        
-        nx.draw_networkx_nodes(graph, pos, cmap=plt.get_cmap('tab20'), node_color=nodes_colors, node_size=100)
-        nx.draw_networkx_labels(graph, pos, font_size=5)
-        nx.draw_networkx_edges(graph, pos, edgelist=graph.edges(), arrows=True, arrowsize=5, edge_color=edges_colors)
+
+        nx.draw_networkx_nodes(
+            graph, 
+            pos, 
+            cmap=plt.get_cmap('tab20'), 
+            node_color=nodes_colors, 
+            node_size=700
+        )
+        nx.draw_networkx_labels(
+            graph, 
+            pos,
+            font_size=7
+        )
+        nx.draw_networkx_edges(
+            graph, 
+            pos,
+            edgelist=graph.edges(), 
+            arrows=True, 
+            arrowsize=5, 
+            edge_color=edges_colors
+        )
+        nx.draw_networkx_edge_labels(
+            graph, pos,
+            edge_labels=edge_labels,
+            font_size=5
+        )
         plt.savefig(output_path, dpi=300)
