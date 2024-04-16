@@ -290,6 +290,7 @@ class Heterogeneous(Graph.Graph):
             #4. build graph
             logger.debug("5. Build graph")
             graph = self.__build_graph(nodes, edges)
+            output_dict['nx_graph'] = graph
             output_dict['number_of_edges'] = graph.number_of_edges()
             output_dict['number_of_nodes'] = graph.number_of_nodes()
 
@@ -313,6 +314,9 @@ class Heterogeneous(Graph.Graph):
 
         logger.info("Done transformations")
         return corpus_output_graph
+    
+    def plot_graph(self, graph: nx.DiGraph, output_path: str):
+        return super().plot(graph, output_path)
     
 
 
