@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 import warnings
 
 # Configs
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
@@ -17,10 +17,10 @@ logger.setLevel(logging.INFO)
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
 if TEST_API_FROM == 'LOCAL':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
+    from text2graphapi.text2graphapi.src.Utils import Utils
+    from text2graphapi.text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.text2graphapi.src import Graph
 else:
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
