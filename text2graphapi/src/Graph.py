@@ -41,10 +41,12 @@ class Graph(object):
             
             :rtype: none
         """
+        graph._node = dict(sorted(graph._node.items()))
         node_labels = options.get("nodes_labels", {})
         edge_labels = options.get("edge_labels", {})
         graph = nx.relabel_nodes(graph, node_labels)
         pos = nx.spring_layout(graph, k=1, iterations=20)
+        plt.cla()
 
         nx.draw_networkx_nodes(
             graph, 

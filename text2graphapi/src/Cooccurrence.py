@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 import warnings
 
 # Configs
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
@@ -17,10 +17,10 @@ logger.setLevel(logging.INFO)
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
 if TEST_API_FROM == 'LOCAL':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
+    from text2graphapi.text2graphapi.src.Utils import Utils
+    from text2graphapi.text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.text2graphapi.src import Graph
 else:
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
@@ -34,7 +34,7 @@ class Cooccurrence(Graph.Graph):
         :param str graph_type: graph type to generate, default=Graph (types: Graph, DiGraph, MultiGraph, MultiDiGraph)
         :param str output_format: output format to the graph default=networkx (formats: networkx, adj_matrix, adj_list, adj_pandas)
         :param int window_size: windows size for co-occurrence, default=1
-        :param int language: language for text prepocessing, default=en (lang: en, es, fr)
+        :param int language: language for text prepocessing, default=en (lang: en, sp, fr)
         :param bool apply_prep: flag to exec text prepocessing, default=true
         :param bool parallel_exec: flag to exec tranformation in parallel, default=false
     """
@@ -61,13 +61,16 @@ class Cooccurrence(Graph.Graph):
 
 
     # normalize text
-    def _text_normalize(self, text: str) -> list:
+    def _text_normalize(self, text: str) -> str:
         """This module generate a word-coocurrence graph from raw text 
 
             :param str text: texto to normalize 
         """
         if self.apply_prep == True:
-            #self.prep.prepocessing_pipeline(text)
+
+            if len(self.prep.param_prepro):
+                return self.prep.prepocessing_pipeline(text)
+
             text = self.prep.handle_blank_spaces(text)
             text = self.prep.handle_non_ascii(text)
             text = self.prep.handle_emoticons(text)
@@ -138,6 +141,7 @@ class Cooccurrence(Graph.Graph):
             edges = self._get_relations(prep_text)
             #4. build graph
             graph = self._build_graph(nodes, edges)
+            output_dict['prep_text'] = prep_text
             output_dict['nx_graph'] = graph
             output_dict['nodes'] = nodes
             output_dict['edges'] = edges
