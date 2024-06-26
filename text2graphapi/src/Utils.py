@@ -6,7 +6,7 @@ import logging
 import spacy
 import nltk
 
-from text2graphapi.src import configs
+from text2graphapi.text2graphapi.src import configs
 
 # Logging configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")

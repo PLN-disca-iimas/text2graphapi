@@ -16,7 +16,7 @@ import warnings
 
 
 # Logging configs
-TEST_API_FROM = 'PYPI' #posible values: LOCAL, PYPI
+TEST_API_FROM = 'LOCAL' #posible values: LOCAL, PYPI
 warnings.filterwarnings("ignore")
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s; - %(levelname)s; - %(message)s")
 logger = logging.getLogger(__name__)
@@ -25,12 +25,12 @@ logger.setLevel(logging.INFO)
 
 
 logger.debug('Import libraries/modules from :%s', TEST_API_FROM)
-if TEST_API_FROM == 'PYPI':
-    from text2graphapi.src.Utils import Utils
-    from text2graphapi.src.Preprocessing import Preprocessing
-    from text2graphapi.src.GraphTransformation import GraphTransformation
-    from text2graphapi.src import Graph
-    from text2graphapi.src import configs
+if TEST_API_FROM == 'LOCAL':
+    from text2graphapi.text2graphapi.src.Utils import Utils
+    from text2graphapi.text2graphapi.src.Preprocessing import Preprocessing
+    from text2graphapi.text2graphapi.src.GraphTransformation import GraphTransformation
+    from text2graphapi.text2graphapi.src import Graph
+    from text2graphapi.text2graphapi.src import configs
 else:
     from text2graphapi.src.Utils import Utils
     from text2graphapi.src.Preprocessing import Preprocessing
@@ -155,15 +155,19 @@ class Heterogeneous(Graph.Graph):
 
     # normalize text
     def _text_normalize(self, text: str) -> dict:
-        text = self.prep.handle_blank_spaces(text)
-        text = self.prep.handle_non_ascii(text)
-        text = self.prep.handle_emoticons(text)
-        text = self.prep.handle_html_tags(text)
-        text = self.prep.handle_negations(text)
-        text = self.prep.handle_contractions(text)
-        text = self.prep.handle_stop_words(text)
-        text = self.prep.to_lowercase(text)
-        text = self.prep.handle_blank_spaces(text)
+        if len(self.prep.param_prepro):
+            text = self.prep.prepocessing_pipeline(text)
+        else:
+            text = self.prep.handle_blank_spaces(text)
+            text = self.prep.handle_non_ascii(text)
+            text = self.prep.handle_emoticons(text)
+            text = self.prep.handle_html_tags(text)
+            text = self.prep.handle_negations(text)
+            text = self.prep.handle_contractions(text)
+            text = self.prep.handle_stop_words(text)
+            text = self.prep.to_lowercase(text)
+            text = self.prep.handle_blank_spaces(text)
+
         word_tokenize = self.prep.word_tokenize(text)
         return text, word_tokenize
 
@@ -290,6 +294,9 @@ class Heterogeneous(Graph.Graph):
             #4. build graph
             logger.debug("5. Build graph")
             graph = self.__build_graph(nodes, edges)
+            output_dict['nx_graph'] = graph
+            output_dict['nodes'] = nodes
+            output_dict['edges'] = edges
             output_dict['number_of_edges'] = graph.number_of_edges()
             output_dict['number_of_nodes'] = graph.number_of_nodes()
 
@@ -313,6 +320,9 @@ class Heterogeneous(Graph.Graph):
 
         logger.info("Done transformations")
         return corpus_output_graph
+    
+    def plot_graph(self, graph: nx.DiGraph, output_path: str, options: dict = {}):
+        return super().plot(graph, output_path, options)
     
 
 
