@@ -103,7 +103,7 @@ class Preprocessing(object):
                 text = self.methods_preprocessing[method](text)
         else:
             for method in self.param_prepro:
-                if self.param_prepro[method]:
+                if self.methods_preprocessing[method]:
                     text = self.methods_preprocessing[method](text)
         return text
 
