@@ -155,15 +155,19 @@ class Heterogeneous(Graph.Graph):
 
     # normalize text
     def _text_normalize(self, text: str) -> dict:
-        text = self.prep.handle_blank_spaces(text)
-        text = self.prep.handle_non_ascii(text)
-        text = self.prep.handle_emoticons(text)
-        text = self.prep.handle_html_tags(text)
-        text = self.prep.handle_negations(text)
-        text = self.prep.handle_contractions(text)
-        text = self.prep.handle_stop_words(text)
-        text = self.prep.to_lowercase(text)
-        text = self.prep.handle_blank_spaces(text)
+        if len(self.prep.param_prepro):
+            text = self.prep.prepocessing_pipeline(text)
+        else:
+            text = self.prep.handle_blank_spaces(text)
+            text = self.prep.handle_non_ascii(text)
+            text = self.prep.handle_emoticons(text)
+            text = self.prep.handle_html_tags(text)
+            text = self.prep.handle_negations(text)
+            text = self.prep.handle_contractions(text)
+            text = self.prep.handle_stop_words(text)
+            text = self.prep.to_lowercase(text)
+            text = self.prep.handle_blank_spaces(text)
+
         word_tokenize = self.prep.word_tokenize(text)
         return text, word_tokenize
 
