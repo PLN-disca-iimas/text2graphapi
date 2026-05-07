@@ -85,3 +85,15 @@ This representation, integrates multiple linguistic levels in a single data stru
 
 
   
+After the execution of this code, we have one undirected representing the whole corpus graph with 8 nodes and 11 edges:
+```Python
+[{
+	'id': 1, 
+	'doc_graph': <networkx.classes.graph.Graph at 0x7f2b44e6d9a0>, 
+	'number_of_edges': 11, 
+	'number_of_nodes': 8, 
+	'status': 'success'
+}]
+```
+## **Acknowledgments**
+This work has been carried out with the support of DGAPA UNAM-PAPIIT projects TA101722, IT100822, and CONAHCYT CF-2023-G-64.  The authors also thank CONAHCYT for the computing resources provided through the Deep Learning Platform for Language Technologies of the INAOE Supercomputing Laboratory.
