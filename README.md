@@ -41,11 +41,10 @@ corpus_docs = [{'id': 1, 'doc': 'The violence on the TV. The article discussed t
 
 to_cooccurrence = Cooccurrence(
                 graph_type = 'DiGraph', 
-                apply_prep = True, 
-                parallel_exec = False,
-                window_size = 1, 
+                apply_prep = True,
+                window_size = 3, 
                 language = 'en',
-                output_format = 'adj_matrix')
+                output_format = 'networkx')
                 
 output_text_graphs = to_cooccurrence.transform(corpus_docs)
 ```
@@ -73,9 +72,8 @@ corpus_docs= [
 
 hetero_graph = Heterogeneous(
 				graph_type = 'Graph',
-		        window_size = 20, 
-		        parallel_exec = False,
-		        apply_preprocessing = True, 
+		        window_size = 3,
+		        apply_prep = True, 
 		        language = 'es',
 		        output_format = 'networkx')
 
@@ -92,5 +90,33 @@ After the execution of this code, we have one undirected representing the whole 
 	'status': 'success'
 }]
 ```
+- **Integrated Syntactic Graph:**
+This representation, integrates multiple linguistic levels in a single data structure. These levels are: the Lexical level (lexical items such as words), Morphological level(deals with the identification, analysis, and description of the structure of the given language’s morphemes such as POS, roots, stem, etc), Syntactic level (deals with the sentence structure such as the dependency trees), and Semantic level (deals with the meaning of the sentences, this can include antonymy, synonymy, etc).
+```Python
+from text2graphapi.src.IntegratedSyntacticGraph import ISG
+
+corpus_docs = [
+    {'id': 1, 'doc': "The sun was shining, making the river look bright and happy."},
+    {'id': 2, 'doc': "Even with the rain, the sun came out a bit, making the wet river shine."}]
+
+isg_graph = ISG(
+				graph_type = 'DiGraph',
+		        window_size = 3,
+		        apply_prep = True, 
+		        language = 'en',
+		        output_format = 'networkx')
+
+output_text_graphs = isg_graph.transform(corpus_docs)
+```
+
+After the execution of this code, we have one undirected representing the whole corpus graph with 8 nodes and 11 edges:
+```Python
+[{'doc_id': 1,
+  'graph': <networkx.classes.digraph.DiGraph at 0x7fae893b7130>,
+  'number_of_edges': 28,
+  'number_of_nodes': 17,
+  'status': 'success'}]
+```
+
 ## **Acknowledgments**
 This work has been carried out with the support of DGAPA UNAM-PAPIIT projects TA101722, IT100822, and CONAHCYT CF-2023-G-64.  The authors also thank CONAHCYT for the computing resources provided through the Deep Learning Platform for Language Technologies of the INAOE Supercomputing Laboratory.
